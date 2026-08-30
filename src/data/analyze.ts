@@ -92,13 +92,13 @@ export function computeLoad(acts: Activity[], cfg: ZonesConfig): LoadPoint[] {
   const sorted = daily.sort((a, b) => (a.date < b.date ? -1 : 1));
 
   // build continuous day range
-  const start = new Date(sorted[0].date + 'T00:00:00Z').getTime();
-  const end = new Date(sorted[sorted.length - 1].date + 'T00:00:00Z').getTime();
+  const start = new Date(sorted[0].date + 'T00:00:00').getTime();
+  const end = new Date(sorted[sorted.length - 1].date + 'T00:00:00').getTime();
   const dayMs = 86400000;
   const tssByDay = new Map(sorted.map((d) => [d.date, d.tss]));
   const days: string[] = [];
   for (let t = start; t <= end; t += dayMs) {
-    days.push(new Date(t).toISOString().slice(0, 10));
+    days.push(toLocalDate(t));
   }
 
   const ctlA = 1 - Math.exp(-1 / 42);

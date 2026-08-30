@@ -30,8 +30,8 @@ function decimate(pts: TrackPoint[], max = 120): [number, number][] {
  * Parse a gzipped FIT activity (Strava bulk exports store tracks as activities/<id>.fit.gz).
  * Returns the per-second HR histogram + decimated route (real GPS, not the avg-HR proxy).
  */
-export async function parseFitGz(gzBytes: any): Promise<FitStream | null> {
-  let fitBytes: any;
+export async function parseFitGz(gzBytes: Uint8Array): Promise<FitStream | null> {
+  let fitBytes: Uint8Array;
   try {
     fitBytes = pako.ungzip(gzBytes);
   } catch {
@@ -40,7 +40,7 @@ export async function parseFitGz(gzBytes: any): Promise<FitStream | null> {
 
   const fit = new FitParser({ force: true, mode: 'list' });
   const parsed = await new Promise<any>((resolve, reject) => {
-    fit.parse(fitBytes, (error: string | undefined, data: any) => {
+    fit.parse(fitBytes.buffer as ArrayBuffer, (error: string | undefined, data: any) => {
       if (error) reject(new Error(error));
       else resolve(data);
     });

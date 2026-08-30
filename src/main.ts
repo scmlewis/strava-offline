@@ -407,6 +407,16 @@ function onRestore() {
   inp.click();
 }
 
+function resetAllState() {
+  allActs = [];
+  cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
+  units = { dist: 'km', pace: 'min/km' };
+  goals = { weeklyKm: null, easyPct: 80 };
+  buildToolbar();
+  setDropzoneCompact(false);
+  refresh();
+}
+
 // ---- clear data modal ----
 function openClearData() {
   const overlay = document.createElement('div');
@@ -422,31 +432,24 @@ function openClearData() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
   document.getElementById('clear-cancel')!.addEventListener('click', close);
   overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('clear-backup')!.addEventListener('click', async () => {
     await onBackup();
     await clearAllData();
-    allActs = [];
-    cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
-    units = { dist: 'km', pace: 'min/km' };
-    goals = { weeklyKm: null, easyPct: 80 };
-    buildToolbar();
-    setDropzoneCompact(false);
-    refresh();
+    resetAllState();
     close();
     setStatus(t('clear_done'), 'ok');
   });
   document.getElementById('clear-go')!.addEventListener('click', async () => {
     await clearAllData();
-    allActs = [];
-    cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
-    units = { dist: 'km', pace: 'min/km' };
-    goals = { weeklyKm: null, easyPct: 80 };
-    buildToolbar();
-    setDropzoneCompact(false);
-    refresh();
+    resetAllState();
     close();
     setStatus(t('clear_done'), 'ok');
   });
@@ -472,12 +475,18 @@ function openZoneSettings() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
   document.getElementById('z-close')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('z-reset')!.addEventListener('click', () => {
     cfg = JSON.parse(JSON.stringify(DEFAULT_ZONES));
     saveZones(cfg);
-    overlay.remove();
+    close();
     refresh();
     setStatus(t('zones_reset_done'), 'ok');
   });
@@ -494,7 +503,7 @@ function openZoneSettings() {
     cfg = { ...cfg, hrMax, restHr, fthr, zones };
     saveZones(cfg);
     setCtx(cfg, units, goals);
-    overlay.remove();
+    close();
     refresh();
     setStatus(t('zones_saved'), 'ok');
   });
@@ -515,8 +524,14 @@ function openGoals() {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
   document.getElementById('g-close')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
   document.getElementById('g-save')!.addEventListener('click', () => {
     const wk = (document.getElementById('g-wk') as HTMLInputElement).value;
     goals = {
@@ -524,7 +539,7 @@ function openGoals() {
       easyPct: Number((document.getElementById('g-easy') as HTMLInputElement).value) || 80,
     };
     saveGoals();
-    overlay.remove();
+    close();
     refresh();
     setStatus(t('goals_saved'), 'ok');
   });
@@ -589,8 +604,14 @@ function openAbout() {
       <div class="modal-actions"><button id="about-close" type="button">${t('about_ok')}</button></div>
     </div>`;
   document.body.appendChild(overlay);
-  document.getElementById('about-close')!.addEventListener('click', () => overlay.remove());
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  document.addEventListener('keydown', onKey);
+  document.getElementById('about-close')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
 }
 
 // ---- drag & drop (compact when data present, expands on any document drag) ----

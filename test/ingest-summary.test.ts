@@ -5,7 +5,7 @@ import { DOMParser as XDOMParser } from '@xmldom/xmldom';
 (globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
 
 import { ingestFiles, type IngestSummary } from '../src/data/zip.ts';
-import { validateBackup, importBackup, type BackupBundle } from '../src/data/db.ts';
+import { validateBackup, importBackup, clearAllData, type BackupBundle } from '../src/data/db.ts';
 import type { Activity } from '../src/data/types.ts';
 
 // minimal localStorage shim
@@ -91,6 +91,26 @@ async function main() {
     ok(imported === 1, 'valid bundle imports 1 activity');
   } else {
     console.log('  · skipping live importBackup (no IndexedDB in Node)');
+  }
+
+  console.log('clearAllData (removes activities and localStorage keys)');
+  // Set some localStorage keys to verify they get removed
+  store['strava-offline:zones'] = JSON.stringify({ hrMax: 200, restHr: 55, zones: [], tssFactor: 1 });
+  store['goals'] = JSON.stringify({ weeklyKm: 50, easyPct: 85 });
+  store['unitPref'] = JSON.stringify({ dist: 'mi', pace: 'min/mi' });
+  store['filterCollapsed'] = '1';
+  store['someOtherKey'] = 'should survive';
+  ok(store['strava-offline:zones'] != null, 'zones key set before clear');
+
+  if (typeof indexedDB !== 'undefined') {
+    try { await clearAllData(); } catch (e) { console.error('clearAllData failed', e); }
+    ok(store['strava-offline:zones'] == null, 'zones key removed after clearAllData');
+    ok(store['goals'] == null, 'goals key removed after clearAllData');
+    ok(store['unitPref'] == null, 'unitPref key removed after clearAllData');
+    ok(store['filterCollapsed'] == null, 'filterCollapsed key removed after clearAllData');
+    ok(store['someOtherKey'] === 'should survive', 'unrelated localStorage keys preserved');
+  } else {
+    console.log('  · skipping live clearAllData (no IndexedDB in Node)');
   }
 
   console.log(`\n${passed} passed, ${failed} failed`);

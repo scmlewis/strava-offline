@@ -62,7 +62,7 @@ export interface DashCtx {
   page: number;
 }
 
-import { esc } from '../utils';
+import { esc, toLocalDate } from '../utils';
 
 // ---- unit-aware formatters ----
 const KM_PER_MI = 1.60934;
@@ -249,10 +249,10 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
     return el;
   }
   const map = new Map(daily.map((d) => [d.date, d.distanceKm]));
-  const start = new Date(daily[0].date + 'T00:00:00Z');
-  const end = new Date(daily[daily.length - 1].date + 'T00:00:00Z');
+  const start = new Date(daily[0].date + 'T00:00:00');
+  const end = new Date(daily[daily.length - 1].date + 'T00:00:00');
   const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
-  const firstDow = start.getUTCDay();
+  const firstDow = start.getDay();
   const cellCount = firstDow + totalDays;
   const weekCols = Math.ceil(cellCount / 7);
 
@@ -278,8 +278,7 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
     days.push(c);
   }
   for (let t = start.getTime(); t <= end.getTime(); t += 86400000) {
-    const d = new Date(t);
-    const key = d.toISOString().slice(0, 10);
+    const key = toLocalDate(t);
     const km = map.get(key) || 0;
     const lvl = levelFor(km);
     const c = document.createElement('div');
@@ -297,9 +296,9 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
     const dayIdx = w * 7 - firstDow;
     const dt = new Date(start.getTime() + dayIdx * 86400000);
     if (dt < start) continue;
-    const m = dt.getUTCMonth();
+    const m = dt.getMonth();
     if (m !== lastMonth) {
-      months.push({ left: w * STRIDE, label: `${dt.getUTCFullYear()} ${dt.toLocaleString('en', { month: 'short' })}` });
+      months.push({ left: w * STRIDE, label: `${dt.getFullYear()} ${dt.toLocaleString('en', { month: 'short' })}` });
       lastMonth = m;
     }
   }

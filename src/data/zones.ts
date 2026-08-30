@@ -31,7 +31,7 @@ export function loadZones(): ZonesConfig {
       }
     }
   } catch {
-    /* ignore */
+    console.warn('Strava Offline: corrupt zone config in localStorage, resetting to defaults');
   }
   return { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
 }
