@@ -8,7 +8,7 @@ export const DEFAULT_ZONES: ZonesConfig = {
   hrMax: 206,
   restHr: 60,
   zones: [
-    { name: 'Z1 恢復', lo: 0.0, hi: 0.6 },
+    { name: 'Z1 Recovery', lo: 0.0, hi: 0.6 },
     { name: 'Z2 Easy', lo: 0.6, hi: 0.75 }, // <= 154 bpm @ HRmax 206
     { name: 'Z3 Tempo', lo: 0.75, hi: 0.85 },
     { name: 'Z4 Threshold', lo: 0.85, hi: 0.95 },

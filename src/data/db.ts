@@ -50,7 +50,7 @@ export async function exportBackup(): Promise<BackupBundle> {
 
 export async function importBackup(bundle: BackupBundle): Promise<number> {
   if (!bundle.activities || !Array.isArray(bundle.activities)) {
-    throw new Error('backup 格式唔啱：搵唔到 activities');
+    throw new Error('Invalid backup: activities array not found');
   }
   if (bundle.zones) {
     try {

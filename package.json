@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Strava 離線分析儀 — 純前端 PWA，本地睇你嘅跑步數據",
+  "description": "Strava Offline Analyzer — local-first PWA to analyze your running data offline",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",

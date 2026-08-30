@@ -34,11 +34,11 @@ interface Filters {
   minKm: number;
   maxKm: number;
   minGain: number;
-  weekday: string; // '' = 全部, 'weekend' | 'weekday' | '0'..'6'
+  weekday: string; // '' = any, 'weekend' | 'weekday' | '0'..'6'
   intensity: string; // '' | 'easy' | 'hard'
-  hasRoute: boolean | null; // null = 不限
-  minPace: number; // sec/km, 0 = 不限
-  maxPace: number; // sec/km, 0 = 不限
+  hasRoute: boolean | null; // null = any
+  minPace: number; // sec/km, 0 = any
+  maxPace: number; // sec/km, 0 = any
   search: string;
 }
 let filters: Filters = {

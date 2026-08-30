@@ -88,10 +88,26 @@ function fmtPaceMin(sec: number | null): string {
   return `${m}:${r.toString().padStart(2, '0')}`;
 }
 function fmtHours(h: number): string {
-  if (h < 1) return `${Math.round(h * 60)} 分`;
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
-  return `${hh} 時 ${mm} 分`;
+  const totalMin = Math.round(h * 60);
+  if (totalMin < 60) return `${totalMin} min`;
+  const mins = totalMin % 60;
+  const totalH = Math.floor(totalMin / 60);
+  const hours = totalH % 24;
+  const totalDays = Math.floor(totalH / 24);
+  const days = totalDays % 7;
+  const weeks = Math.floor(totalDays / 7);
+  // Show the two largest non-zero units (e.g. "3d 4h", "1w 2d", "5h 30m").
+  const parts: string[] = [];
+  if (weeks) parts.push(`${weeks}w`);
+  if (days) parts.push(`${days}d`);
+  if (hours && parts.length < 2) parts.push(`${hours}h`);
+  if (mins && parts.length < 2) parts.push(`${mins}m`);
+  return parts.join(' ');
+}
+function fmtElev(m: number | null): string {
+  if (m == null) return '—';
+  if (m >= 1000) return `${(m / 1000).toFixed(2)} km`;
+  return `${Math.round(m)} m`;
 }
 function fmtTSS(tss: number | null): string {
   return tss == null ? '—' : tss.toFixed(0);
@@ -201,7 +217,7 @@ function renderCards(acts: Activity[]): HTMLElement {
     card(t('card_activities'), String(s.count), undefined, '#60a5fa'),
     card(t('card_total_dist'), fmtDistance(s.totalDistanceKm), s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '', '#36d399'),
     card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa'),
-    card(t('card_total_elev'), s.totalElevM ? `${Math.round(s.totalElevM)} m` : '—', undefined, '#fbbf24'),
+    card(t('card_total_elev'), s.totalElevM ? fmtElev(s.totalElevM) : '—', undefined, '#fbbf24'),
   ];
   if (easy.pct != null) {
     const ok = easy.pct >= goals.easyPct * 0.9;
@@ -479,7 +495,7 @@ function renderClimb(acts: Activity[]): HTMLElement {
   }
   const rows = scores
     .slice(0, 12)
-    .map((s) => `<tr><td>${s.date}</td><td>${s.score}</td><td>${s.gainM} m</td><td>${(s.grad * 100).toFixed(1)}%</td></tr>`)
+    .map((s) => `<tr><td>${s.date}</td><td>${s.score}</td><td>${fmtElev(s.gainM)}</td><td>${(s.grad * 100).toFixed(1)}%</td></tr>`)
     .join('');
   el.innerHTML += `<div class="table-scroll climb-scroll"><table class="act-table">
     <thead><tr><th>${t('col_date')}</th><th>${t('col_score')}</th><th>${t('col_gain')}</th><th>${t('col_grade')}</th></tr></thead>
@@ -565,7 +581,7 @@ export function openActivityDetail(id: string): void {
     [t('col_distance'), a.distanceKm != null ? fmtDistance(a.distanceKm) : '—'],
     [t('col_pace'), a.distanceKm && a.movingTimeMin ? fmtPaceMin((a.movingTimeMin * 60) / a.distanceKm) : '—'],
     [t('col_moving_time'), a.movingTimeMin != null ? fmtHours(a.movingTimeMin / 60) : '—'],
-    [t('col_elevation_gain'), a.elevationGainM != null ? `${a.elevationGainM} m` : '—'],
+    [t('col_elevation_gain'), a.elevationGainM != null ? fmtElev(a.elevationGainM) : '—'],
     [t('col_avg_hr'), a.avgHr != null ? `${Math.round(a.avgHr)} bpm` : '—'],
     [t('col_max_hr'), a.maxHr != null ? `${Math.round(a.maxHr)} bpm` : '—'],
     [t('col_tss'), tss != null ? tss.toFixed(0) : '—'],
