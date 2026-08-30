@@ -34,8 +34,8 @@ export interface TrackPoint {
 }
 
 export interface Activity {
-  id: string; // csv:<stravaId> | gpx:<stravaId>
-  source: 'csv' | 'gpx';
+  id: string; // csv:<stravaId> | gpx:<stravaId> | fit:<stravaId>
+  source: 'csv' | 'gpx' | 'fit';
   date: string; // YYYY-MM-DD
   ts: number; // epoch ms
   name: string;

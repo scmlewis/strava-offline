@@ -9,14 +9,17 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/ingest.test.ts && tsx test/acceptance.test.ts"
+    "test": "tsx test/ingest.test.ts && tsx test/fit.test.ts && tsx test/acceptance.test.ts"
   },
   "dependencies": {
     "dexie": "^4.0.8",
+    "fit-file-parser": "^5.0.2",
+    "pako": "^2.2.0",
     "papaparse": "^5.4.1",
     "uplot": "^1.6.31"
   },
   "devDependencies": {
+    "@types/pako": "^2.0.4",
     "@types/papaparse": "^5.3.14",
     "@xmldom/xmldom": "^0.8.10",
     "jszip": "^3.10.1",
