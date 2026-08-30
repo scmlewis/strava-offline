@@ -9,7 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
-    "test": "tsx test/ingest.test.ts && tsx test/fit.test.ts && tsx test/acceptance.test.ts"
+    "test": "tsx test/ingest.test.ts && tsx test/fit.test.ts && tsx test/ingest-summary.test.ts && tsx test/acceptance.test.ts"
   },
   "dependencies": {
     "dexie": "^4.0.8",

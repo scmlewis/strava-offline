@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Activity, ZonesConfig } from './types';
+import type { Activity, ZonesConfig, Units, Goals } from './types';
 import { DEFAULT_ZONES } from './zones';
 
 export class StravaDB extends Dexie {
@@ -28,37 +28,68 @@ export interface BackupBundle {
   version: 1;
   exportedAt: string;
   zones: ZonesConfig;
+  goals: Goals;
+  units: Units;
   activities: Activity[];
+}
+
+const ZONES_KEY = 'strava-offline:zones';
+const GOALS_KEY = 'goals';
+const UNITS_KEY = 'unitPref';
+
+function readJson<T>(key: string): T | null {
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as T) : null;
+  } catch {
+    return null;
+  }
+}
+function writeJson(key: string, val: unknown): void {
+  try {
+    localStorage.setItem(key, JSON.stringify(val));
+  } catch {
+    /* quota or disabled storage — non-fatal for a backup import */
+  }
 }
 
 export async function exportBackup(): Promise<BackupBundle> {
   const activities = await db.activities.toArray();
-  let zones = DEFAULT_ZONES;
-  try {
-    const raw = localStorage.getItem('strava-offline:zones');
-    if (raw) zones = JSON.parse(raw);
-  } catch {
-    /* ignore */
-  }
   return {
     version: 1,
     exportedAt: new Date().toISOString(),
-    zones,
+    zones: readJson<ZonesConfig>(ZONES_KEY) ?? DEFAULT_ZONES,
+    goals: readJson<Goals>(GOALS_KEY) ?? { weeklyKm: null, easyPct: 80 },
+    units: readJson<Units>(UNITS_KEY) ?? { dist: 'km', pace: 'min/km' },
     activities,
   };
 }
 
-export async function importBackup(bundle: BackupBundle): Promise<number> {
-  if (!bundle.activities || !Array.isArray(bundle.activities)) {
-    throw new Error('Invalid backup: activities array not found');
+/** Validate a parsed backup object. Throws a user-facing message on any problem. */
+export function validateBackup(bundle: unknown): asserts bundle is BackupBundle {
+  if (!bundle || typeof bundle !== 'object') {
+    throw new Error('Backup not recognised — not a JSON object');
   }
-  if (bundle.zones) {
-    try {
-      localStorage.setItem('strava-offline:zones', JSON.stringify(bundle.zones));
-    } catch {
-      /* ignore */
+  const b = bundle as Record<string, unknown>;
+  if (b.version !== 1) {
+    throw new Error('Backup not recognised — unsupported version');
+  }
+  if (!Array.isArray(b.activities)) {
+    throw new Error('Backup not recognised — missing activities array');
+  }
+  // Every activity must at least have a string id we can bulkPut on.
+  for (const a of b.activities as unknown[]) {
+    if (!a || typeof a !== 'object' || typeof (a as Record<string, unknown>).id !== 'string') {
+      throw new Error('Backup not recognised — an activity is missing its id');
     }
   }
+}
+
+export async function importBackup(bundle: BackupBundle): Promise<number> {
+  validateBackup(bundle);
+  if (bundle.zones) writeJson(ZONES_KEY, bundle.zones);
+  if (bundle.goals) writeJson(GOALS_KEY, bundle.goals);
+  if (bundle.units) writeJson(UNITS_KEY, bundle.units);
   await db.activities.bulkPut(bundle.activities);
   return bundle.activities.length;
 }

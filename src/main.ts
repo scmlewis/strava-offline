@@ -1,5 +1,5 @@
 import './styles.css';
-import { ingestFiles } from './data/zip';
+import { runIngest } from './data/ingestClient';
 import { saveActivities, loadActivities, exportBackup, importBackup } from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
@@ -80,6 +80,22 @@ function setStatus(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   statusEl.hidden = false;
   statusEl.className = `status ${kind}`;
   statusEl.textContent = msg;
+}
+
+const progressEl = document.getElementById('progress') as HTMLDivElement;
+const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
+const progressLabel = document.getElementById('progress-label') as HTMLSpanElement;
+
+function showProgress(done: number, total: number, phase: string) {
+  progressEl.hidden = false;
+  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
+  progressFill.style.width = `${pct}%`;
+  progressLabel.textContent = total > 0 ? t('st_progress', { done, total }) : t('st_parsing');
+  if (phase) progressLabel.textContent += ` · ${phase}`;
+}
+function hideProgress() {
+  progressEl.hidden = true;
+  progressFill.style.width = '0%';
 }
 
 function matches(acts: Activity[]): Activity[] {
@@ -382,7 +398,13 @@ function onRestore() {
       refresh();
       setStatus(t('restore_done', { n }), 'ok');
     } catch (e) {
-      setStatus(t('restore_fail', { e: e instanceof Error ? e.message : String(e) }), 'err');
+      const msg = e instanceof Error ? e.message : String(e);
+      // map known validation messages to friendly i18n strings
+      const key =
+        msg.includes('unsupported version') ? 'restore_bad_version'
+        : msg.includes('missing activities') || msg.includes('not a JSON') || msg.includes('missing its id') ? 'restore_bad_shape'
+        : null;
+      setStatus(key ? t(key) : t('restore_fail', { e: msg }), 'err');
     }
   });
   inp.click();
@@ -470,7 +492,10 @@ function openGoals() {
 async function handleFiles(files: File[] | FileList) {
   try {
     setStatus(t('st_parsing'), 'info');
-    const acts = await ingestFiles(files);
+    showProgress(0, 1, '');
+    const summary = await runIngest(files, (p) => showProgress(p.done, p.total, p.phase));
+    hideProgress();
+    const acts = summary.activities;
     if (!acts.length) {
       setStatus(t('st_no_acts'), 'err');
       return;
@@ -481,8 +506,14 @@ async function handleFiles(files: File[] | FileList) {
     buildToolbar();
     setDropzoneCompact(true);
     refresh();
-    setStatus(t('st_imported', { n: acts.length }), 'ok');
+    if (summary.issues.length) {
+      console.warn(`Strava Offline: skipped ${summary.issues.length} file(s) during import:`, summary.issues);
+      setStatus(t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }), 'ok');
+    } else {
+      setStatus(t('st_imported', { n: acts.length }), 'ok');
+    }
   } catch (e) {
+    hideProgress();
     setStatus(t('st_import_fail', { e: e instanceof Error ? e.message : String(e) }), 'err');
   }
 }

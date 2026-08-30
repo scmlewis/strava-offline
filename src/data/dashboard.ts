@@ -441,7 +441,7 @@ function renderPRs(acts: Activity[]): HTMLElement {
   const prs = computePRs(acts);
   const el = section(t('personal_records'));
   const rows = prs
-    .map((p) => `<tr><td>${p.label}</td><td>${p.bestSec != null ? fmtPaceMin(p.bestSec) : '—'}</td><td>${p.date || '—'}</td></tr>`)
+    .map((p) => `<tr><td>${esc(p.label)}</td><td>${p.bestSec != null ? fmtPaceMin(p.bestSec) : '—'}</td><td>${esc(p.date || '—')}</td></tr>`)
     .join('');
   el.innerHTML += `<div class="table-scroll"><table class="act-table">
     <thead><tr><th>${t('col_distance')}</th><th>${t('col_best_time')}</th><th>${t('col_date')}</th></tr></thead>
@@ -453,7 +453,7 @@ function renderRiegel(acts: Activity[]): HTMLElement {
   const preds = computeRiegel(acts);
   const el = section(t('race_predictions'));
   const rows = preds
-    .map((p) => `<tr><td>${p.label}</td><td>${p.predictedSec != null ? fmtPaceMin(p.predictedSec) : '—'}</td><td>${p.anchorLabel || '—'}</td></tr>`)
+    .map((p) => `<tr><td>${esc(p.label)}</td><td>${p.predictedSec != null ? fmtPaceMin(p.predictedSec) : '—'}</td><td>${esc(p.anchorLabel || '—')}</td></tr>`)
     .join('');
   el.innerHTML += `<div class="table-scroll"><table class="act-table">
     <thead><tr><th>${t('col_distance')}</th><th>${t('col_predicted')}</th><th>${t('col_anchor')}</th></tr></thead>
@@ -478,7 +478,7 @@ function renderVO2(acts: Activity[]): HTMLElement {
     : '';
   el.innerHTML += `
     <div class="vdot-num">${r.vdot.toFixed(1)}</div>
-    <p class="hint">${t('vo2anchor', { label: r.anchorLabel ?? '—' })}</p>
+    <p class="hint">${t('vo2anchor', { label: esc(r.anchorLabel ?? '—') })}</p>
     <div class="table-scroll"><table class="act-table">
       <thead><tr><th>${t('col_training_pace')}</th><th>${t('col_target_per_km')}</th></tr></thead>
       <tbody>${paceRows}</tbody></table></div>

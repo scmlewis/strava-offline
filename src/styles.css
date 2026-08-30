@@ -103,6 +103,12 @@ body {
 .status.err { background: rgba(248, 113, 113, 0.1); color: var(--danger); border-color: rgba(248, 113, 113, 0.25); }
 .status.info { background: rgba(154, 160, 192, 0.1); color: var(--muted); }
 
+.progress { display: flex; align-items: center; gap: 10px; margin: 10px 0 0; }
+.progress[hidden] { display: none; }
+.progress-bar { flex: 1; height: 8px; border-radius: 999px; background: rgba(154, 160, 192, 0.18); overflow: hidden; }
+.progress-fill { height: 100%; width: 0%; border-radius: 999px; background: var(--accent); transition: width 0.15s ease; }
+.progress-label { font-size: 0.8rem; color: var(--muted); white-space: nowrap; min-width: 96px; text-align: right; }
+
 /* ---- Inline SVG icons (Lucide/Feather style) ---- */
 .icon { width: 16px; height: 16px; display: inline-block; vertical-align: middle; flex: none; }
 button .icon { vertical-align: middle; }

@@ -182,8 +182,8 @@ const mockZip = {
   async text() { return ''; },
 } as unknown as File;
 const merged = await ingestFiles([mockZip]);
-ok(merged.length === 1, 'zip ingest produced 1 activity');
-const m = merged[0];
+ok(merged.activities.length === 1, 'zip ingest produced 1 activity');
+const m = merged.activities[0];
 ok(m.id === 'csv:7777', 'activity id preserved from CSV (csv:7777)');
 ok(m.distanceKm === 12, `distance 12000m -> 12km from CSV (got ${m.distanceKm})`);
 ok(m.hrHistogram !== null, 'GPX HR histogram merged into CSV activity');
