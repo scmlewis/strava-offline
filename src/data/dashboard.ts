@@ -62,11 +62,7 @@ export interface DashCtx {
   page: number;
 }
 
-function esc(s: string): string {
-  return s.replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
-  );
-}
+import { esc } from '../utils';
 
 // ---- unit-aware formatters ----
 const KM_PER_MI = 1.60934;

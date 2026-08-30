@@ -24,7 +24,8 @@ export type IconName =
   | 'star'
   | 'list'
   | 'refresh'
-  | 'inbox';
+  | 'inbox'
+  | 'trash';
 
 const PATHS: Record<IconName, string> = {
   filter: '<path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/>',
@@ -49,6 +50,7 @@ const PATHS: Record<IconName, string> = {
   list: '<path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/>',
   refresh: '<path d="M3.5 12a8.5 8.5 0 0 1 14.5-6L21 7.5M21 3.5v4h-4M20.5 12a8.5 8.5 0 0 1-14.5 6L3 16.5M3 20.5v-4h4"/>',
   inbox: '<path d="M22 12.5h-6.5L13.5 16H10.5l-2-3.5H2"/><path d="M4.5 5h15l3 7.5v5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-5z"/>',
+  trash: '<path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M10 11v6M14 11v6"/>',
 };
 
 export function icon(name: IconName, size = 16): string {

@@ -1,17 +1,12 @@
 import './styles.css';
 import { runIngest } from './data/ingestClient';
-import { saveActivities, loadActivities, exportBackup, importBackup } from './data/db';
+import { saveActivities, loadActivities, exportBackup, importBackup, clearAllData } from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
 import type { Activity, Units, Goals } from './data/types';
 import { computeEasy } from './data/analyze';
 import { t } from './i18n';
-
-function esc(s: string): string {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string,
-  );
-}
+import { esc } from './utils';
 
 const dropzone = document.getElementById('dropzone') as HTMLDivElement;
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -248,6 +243,7 @@ function buildToolbar() {
     <div class="tb-actions">
       <button id="btn-backup" type="button" class="ico-btn" title="${t('backup')}">${icon('download')}</button>
       <button id="btn-restore" type="button" class="ico-btn" title="${t('restore')}">${icon('upload')}</button>
+      <button id="btn-clear" type="button" class="ico-btn" title="${t('clear_data')}">${icon('trash')}</button>
       <button id="btn-zones" type="button" class="ico-btn" title="${t('zones')}">${icon('heart')}</button>
       <button id="btn-goals" type="button" class="ico-btn" title="${t('goals')}">${icon('target')}</button>
       <button id="btn-diag" type="button" class="ico-btn" title="${t('diagnostics')}">${icon('list')}</button>
@@ -307,6 +303,7 @@ function buildToolbar() {
   if (aboutBtn) aboutBtn.addEventListener('click', openAbout);
   document.getElementById('btn-backup')!.addEventListener('click', onBackup);
   document.getElementById('btn-restore')!.addEventListener('click', onRestore);
+  document.getElementById('btn-clear')!.addEventListener('click', openClearData);
   document.getElementById('btn-zones')!.addEventListener('click', openZoneSettings);
   document.getElementById('btn-goals')!.addEventListener('click', openGoals);
   document.getElementById('btn-diag')!.addEventListener('click', onDiagnostics);
@@ -410,11 +407,56 @@ function onRestore() {
   inp.click();
 }
 
+// ---- clear data modal ----
+function openClearData() {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${icon('trash', 20)} ${t('clear_title')}</h3>
+      <p>${t('clear_confirm', { n: allActs.length })}</p>
+      <div class="modal-actions">
+        <button id="clear-backup" type="button">${icon('download', 14)} ${t('clear_backup_first')}</button>
+        <button id="clear-go" type="button" class="danger">${t('clear_go')}</button>
+        <button id="clear-cancel" type="button">${t('zones_cancel')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  document.getElementById('clear-cancel')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.getElementById('clear-backup')!.addEventListener('click', async () => {
+    await onBackup();
+    await clearAllData();
+    allActs = [];
+    cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
+    units = { dist: 'km', pace: 'min/km' };
+    goals = { weeklyKm: null, easyPct: 80 };
+    buildToolbar();
+    setDropzoneCompact(false);
+    refresh();
+    close();
+    setStatus(t('clear_done'), 'ok');
+  });
+  document.getElementById('clear-go')!.addEventListener('click', async () => {
+    await clearAllData();
+    allActs = [];
+    cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
+    units = { dist: 'km', pace: 'min/km' };
+    goals = { weeklyKm: null, easyPct: 80 };
+    buildToolbar();
+    setDropzoneCompact(false);
+    refresh();
+    close();
+    setStatus(t('clear_done'), 'ok');
+  });
+}
+
 // ---- zone settings modal ----
 function openZoneSettings() {
   const z = cfg.zones;
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'overlay';
   overlay.innerHTML = `
     <div class="modal">
       <h3>${t('zones_title')}</h3>
@@ -461,7 +503,7 @@ function openZoneSettings() {
 // ---- goals modal ----
 function openGoals() {
   const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay';
+  overlay.className = 'overlay';
   overlay.innerHTML = `
     <div class="modal">
       <h3>${t('goals_title')}</h3>
@@ -608,7 +650,6 @@ onCtxChange(dashboard, refresh);
 loadActivities().then((acts) => {
   if (acts.length) {
     allActs = acts;
-    buildNav();
     buildToolbar();
     setDropzoneCompact(true);
     refresh();

@@ -24,7 +24,12 @@ const STORE_KEY = 'strava-offline:zones';
 export function loadZones(): ZonesConfig {
   try {
     const raw = localStorage.getItem(STORE_KEY);
-    if (raw) return { ...DEFAULT_ZONES, ...JSON.parse(raw) } as ZonesConfig;
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && Array.isArray(parsed.zones)) {
+        return { ...DEFAULT_ZONES, ...parsed } as ZonesConfig;
+      }
+    }
   } catch {
     /* ignore */
   }

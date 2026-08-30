@@ -24,6 +24,16 @@ export async function clearActivities(): Promise<void> {
   await db.activities.clear();
 }
 
+const SETTINGS_KEYS = ['strava-offline:zones', 'goals', 'unitPref', 'filterCollapsed'] as const;
+
+/** Remove all activities from IndexedDB and all settings from localStorage. */
+export async function clearAllData(): Promise<void> {
+  await db.activities.clear();
+  for (const key of SETTINGS_KEYS) {
+    localStorage.removeItem(key);
+  }
+}
+
 export interface BackupBundle {
   version: 1;
   exportedAt: string;

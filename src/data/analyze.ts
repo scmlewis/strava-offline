@@ -1,5 +1,6 @@
 import type { Activity, ZonesConfig } from './types';
 import { zoneForHr, intensityForHr } from './zones';
+import { toLocalDate, todayLocal, yesterdayLocal } from '../utils';
 
 function mondayOf(ts: number): string {
   const d = new Date(ts);
@@ -234,8 +235,8 @@ export function computeSummary(acts: Activity[]): Summary {
     totalDistanceKm: dist,
     totalMovingHours: moving / 60,
     totalElevM: elev,
-    firstDate: first ? new Date(first).toISOString().slice(0, 10) : null,
-    lastDate: last ? new Date(last).toISOString().slice(0, 10) : null,
+    firstDate: first ? toLocalDate(first) : null,
+    lastDate: last ? toLocalDate(last) : null,
     avgDistanceKm: n && dist ? dist / n : null,
   };
 }
@@ -480,8 +481,8 @@ export function computeStreaks(acts: Activity[]): StreakResult {
     if (run > longest) longest = run;
   }
   const last = arr[arr.length - 1];
-  const today = new Date().toISOString().slice(0, 10);
-  const yest = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const today = todayLocal();
+  const yest = yesterdayLocal();
   let current = 0;
   let cursor = last;
   if (last === today || last === yest) {

@@ -63,6 +63,7 @@ const EN: Dict = {
   unit: 'Unit',
   backup: 'Export backup',
   restore: 'Import backup',
+  clear_data: 'Clear all data',
   zones: 'HR zone settings',
   goals: 'Goal settings',
   about: 'About',
@@ -203,6 +204,13 @@ const EN: Dict = {
   restore_bad_shape: 'Backup not recognised — missing activities array',
   st_loaded: 'Loaded {n} activities (offline cache)',
   diag_done: 'Diagnostics: {total} total, {withDist} with distance',
+
+  // ---- clear data modal ----
+  clear_title: 'Clear all data',
+  clear_confirm: 'This will permanently delete all {n} activities and settings (zones, goals, units). This cannot be undone.',
+  clear_backup_first: 'Export backup first',
+  clear_go: 'Clear everything',
+  clear_done: 'All data cleared',
 };
 
 export function t(key: string, params?: Record<string, string | number>): string {
