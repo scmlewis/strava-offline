@@ -51,7 +51,7 @@ function makeChart(host: HTMLElement, opts: uPlot.Options, data: uPlot.AlignedDa
   });
   return plot;
 }
-const ZONE_COLORS = ['#60a5fa', '#36d399', '#fbbf24', '#fb923c', '#f87171'];
+const ZONE_COLORS = ['#7a8299', '#34d399', '#fbbf24', '#fb923c', '#f87171'];
 export type TabId = 'overview' | 'volume' | 'load' | 'zones' | 'perf' | 'log';
 
 export interface DashCtx {
@@ -210,14 +210,14 @@ function renderCards(acts: Activity[]): HTMLElement {
   const tsb = load.length ? load[load.length - 1].tsb : 0;
   const ctl = load.length ? load[load.length - 1].ctl : 0;
   const cards = [
-    card(t('card_activities'), String(s.count), undefined, '#60a5fa'),
-    card(t('card_total_dist'), fmtDistance(s.totalDistanceKm), s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '', '#36d399'),
+    card(t('card_activities'), String(s.count), undefined, '#34d399'),
+    card(t('card_total_dist'), fmtDistance(s.totalDistanceKm), s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '', '#34d399'),
     card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa'),
     card(t('card_total_elev'), s.totalElevM ? fmtElev(s.totalElevM) : '—', undefined, '#fbbf24'),
   ];
   if (easy.pct != null) {
     const ok = easy.pct >= goals.easyPct * 0.9;
-    const accent = ok ? '#36d399' : '#fbbf24';
+    const accent = ok ? '#34d399' : '#fbbf24';
     cards.push(
       card(
         t('card_easy_pct'),
@@ -229,7 +229,7 @@ function renderCards(acts: Activity[]): HTMLElement {
   }
   if (load.length) {
     const formLabel = tsb > 5 ? t('form_fresh') : tsb < -10 ? t('form_fatigued') : t('form_optimal');
-    const accent = tsb > 5 ? '#a78bfa' : tsb < -10 ? '#f87171' : '#36d399';
+    const accent = tsb > 5 ? '#a78bfa' : tsb < -10 ? '#f87171' : '#34d399';
     cards.push(card(t('card_form'), tsb.toFixed(0), `${t('card_ctl')} ${ctl.toFixed(0)} · ${formLabel}`, accent));
   }
   if (s.firstDate && s.lastDate) {
@@ -328,7 +328,7 @@ function renderWeekly(acts: Activity[]): HTMLElement {
   const el = section(t('weekly_volume', { n: vol.length, unit: units.dist }));
   const host = document.createElement('div');
   el.appendChild(host);
-  const opts = plotOpts([{}, { label: 'km', stroke: '#36d399', width: 2, fill: 'rgba(54,211,153,0.12)' }], 210, ys);
+  const opts = plotOpts([{}, { label: 'km', stroke: '#34d399', width: 2, fill: 'rgba(52,211,153,0.12)' }], 210, ys);
   // x-axis ticks show actual ISO week numbers
   (opts.axes![0] as uPlot.Axis).values = (_u, ts) =>
     ts.map((t) => {
@@ -357,9 +357,9 @@ function renderLoad(acts: Activity[]): HTMLElement | null {
     plotOpts(
       [
         {},
-        { label: 'CTL', stroke: '#36d399', width: 2 },
+        { label: 'CTL', stroke: '#34d399', width: 2 },
         { label: 'ATL', stroke: '#fb923c', width: 2 },
-        { label: 'TSB', stroke: '#60a5fa', width: 1, dash: [4, 3] },
+        { label: 'TSB', stroke: '#7a8299', width: 1, dash: [4, 3] },
       ],
       230,
       allY,
@@ -531,7 +531,7 @@ function buildRouteSvg(route: [number, number][]): string {
     })
     .join(' ');
   return `<svg viewBox="0 0 ${W} ${H}" class="route-svg" preserveAspectRatio="none">
-    <polyline points="${pts}" fill="none" stroke="#36d399" stroke-width="1.5" stroke-linejoin="round"/>
+    <polyline points="${pts}" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
   </svg>`;
 }
 
