@@ -64,13 +64,13 @@ function loadGoals(): Goals {
 }
 function saveGoals() { localStorage.setItem('goals', JSON.stringify(goals)); }
 function loadPrefs(): Preferences {
+  const def: Preferences = { weekStart: 'sun' };
   try {
     const raw = localStorage.getItem('prefs');
-    if (raw) return { ...defaultPrefs, ...JSON.parse(raw) };
+    if (raw) return { ...def, ...JSON.parse(raw) };
   } catch { /* ignore */ }
-  return { ...defaultPrefs };
+  return def;
 }
-const defaultPrefs: Preferences = { weekStart: 'sun' };
 function savePrefs() { localStorage.setItem('prefs', JSON.stringify(prefs)); }
 
 import { icon, type IconName } from './icons';
