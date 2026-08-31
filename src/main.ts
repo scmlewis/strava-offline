@@ -84,17 +84,17 @@ const TABS: Array<{ id: TabId; label: string; icon: IconName }> = [
   { id: 'log', label: t('nav_log'), icon: 'list' },
 ];
 
+let statusTimer = 0;
 function setStatus(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   statusEl.hidden = false;
   statusEl.className = `status ${kind}`;
   statusEl.textContent = msg;
   // Auto-dismiss success/info after 3s
   if (kind !== 'err') {
-    clearTimeout(setStatus._timer);
-    setStatus._timer = window.setTimeout(() => { statusEl.hidden = true; }, 3000);
+    clearTimeout(statusTimer);
+    statusTimer = window.setTimeout(() => { statusEl.hidden = true; }, 3000);
   }
 }
-namespace setStatus { export let _timer: number; }
 
 const progressEl = document.getElementById('progress') as HTMLDivElement;
 const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
