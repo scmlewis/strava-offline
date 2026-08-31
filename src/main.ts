@@ -3,7 +3,7 @@ import { runIngest } from './data/ingestClient';
 import { saveActivities, loadActivities, exportBackup, importBackup, clearAllData } from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
-import type { Activity, Units, Goals } from './data/types';
+import type { Activity, Units, Goals, Preferences } from './data/types';
 import { computeEasy } from './data/analyze';
 import { t } from './i18n';
 import { esc } from './utils';
@@ -20,6 +20,7 @@ let allActs: Activity[] = [];
 let cfg: ZonesConfig = loadZones();
 let units: Units = loadUnits();
 let goals: Goals = loadGoals();
+let prefs: Preferences = loadPrefs();
 
 interface Filters {
   type: string;
@@ -54,11 +55,23 @@ function saveUnits() { localStorage.setItem('unitPref', JSON.stringify(units)); 
 function loadGoals(): Goals {
   try {
     const raw = localStorage.getItem('goals');
-    if (raw) return JSON.parse(raw);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      return { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2, ...parsed };
+    }
   } catch { /* ignore */ }
-  return { weeklyKm: null, easyPct: 80 };
+  return { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 };
 }
 function saveGoals() { localStorage.setItem('goals', JSON.stringify(goals)); }
+function loadPrefs(): Preferences {
+  try {
+    const raw = localStorage.getItem('prefs');
+    if (raw) return { ...defaultPrefs, ...JSON.parse(raw) };
+  } catch { /* ignore */ }
+  return { ...defaultPrefs };
+}
+const defaultPrefs: Preferences = { weekStart: 'sun' };
+function savePrefs() { localStorage.setItem('prefs', JSON.stringify(prefs)); }
 
 import { icon, type IconName } from './icons';
 
@@ -148,12 +161,12 @@ function matches(acts: Activity[]): Activity[] {
 
 // per-activity easy classification: histogram-based if available, else avg HR proxy
 function isEasy(a: Activity): boolean {
-  const easy = computeEasy([a], cfg);
+  const easy = computeEasy([a], cfg, goals.easyZones);
   return easy.basis === 'histogram' ? easy.easyCount > 0 : false;
 }
 
 function refresh() {
-  setCtx(cfg, units, goals);
+  setCtx(cfg, units, goals, prefs);
   renderDashboard(dashboard, matches(allActs), ctx);
 }
 
@@ -243,6 +256,10 @@ function buildToolbar() {
         <option value="km" ${units.dist === 'km' ? 'selected' : ''}>km</option>
         <option value="mi" ${units.dist === 'mi' ? 'selected' : ''}>mi</option>
       </select></label>
+      <label class="tb-ico" title="${t('week_start')}">${icon('calendar')}<select id="t-weekstart">
+        <option value="sun" ${prefs.weekStart === 'sun' ? 'selected' : ''}>${t('week_sun')}</option>
+        <option value="mon" ${prefs.weekStart === 'mon' ? 'selected' : ''}>${t('week_mon')}</option>
+      </select></label>
       <button id="btn-reset" type="button" class="act-reset"${activeCount ? '' : ' disabled'}>${icon('refresh')} ${t('reset')} (${activeCount})</button>
     </div>
     </div>
@@ -292,6 +309,11 @@ function buildToolbar() {
     const v = (e.target as HTMLSelectElement).value as 'km' | 'mi';
     units = { dist: v, pace: v === 'mi' ? 'min/mi' : 'min/km' };
     saveUnits();
+    refresh();
+  });
+  (document.getElementById('t-weekstart') as HTMLSelectElement).addEventListener('change', (e) => {
+    prefs.weekStart = (e.target as HTMLSelectElement).value as 'sun' | 'mon';
+    savePrefs();
     refresh();
   });
   document.getElementById('btn-reset')!.addEventListener('click', resetFilters);
@@ -420,7 +442,8 @@ function resetAllState() {
   allActs = [];
   cfg = { ...DEFAULT_ZONES, zones: DEFAULT_ZONES.zones.map((z) => ({ ...z })) };
   units = { dist: 'km', pace: 'min/km' };
-  goals = { weeklyKm: null, easyPct: 80 };
+  goals = { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 };
+  prefs = { weekStart: 'sun' };
   buildToolbar();
   setDropzoneCompact(false);
   refresh();
@@ -475,8 +498,12 @@ function openZoneSettings() {
       <label class="zfield">${t('zones_hrmax')}<input id="z-hrmax" type="number" value="${cfg.hrMax}" /></label>
       <label class="zfield">${t('zones_rest')}<input id="z-rest" type="number" value="${cfg.restHr}" /></label>
       <label class="zfield">${t('zones_fthr')}<input id="z-fthr" type="number" value="${cfg.fthr ?? ''}" placeholder="e.g. 180" /></label>
-      <p class="hint">${t('zones_hint')}</p>
-      ${z.map((zn, i) => `<div class="zrow"><span>${esc(zn.name)}</span><input id="z-z${i}" type="number" step="0.01" value="${zn.hi}" /></div>`).join('')}
+      <p class="det-h">${t('training_model')}</p>
+      <label class="zfield">${t('ctl_tau')}<input id="z-ctltau" type="number" min="7" max="90" step="1" value="${cfg.ctlTau}" /></label>
+      <label class="zfield">${t('atl_tau')}<input id="z-atltau" type="number" min="3" max="30" step="1" value="${cfg.atlTau}" /></label>
+      <label class="zfield">${t('tss_factor')}<input id="z-tssfactor" type="number" min="0.5" max="5" step="0.01" value="${cfg.tssFactor}" /></label>
+      <p class="det-h">${t('zone_names_and_bounds')}</p>
+      ${z.map((zn, i) => `<div class="zrow"><input id="z-name${i}" type="text" value="${esc(zn.name)}" style="width:100px" /><input id="z-z${i}" type="number" step="0.01" value="${zn.hi}" /></div>`).join('')}
       <div class="modal-actions">
         <button id="z-save" type="button">${t('zones_save')}</button>
         <button id="z-reset" type="button">${t('zones_reset')}</button>
@@ -504,14 +531,18 @@ function openZoneSettings() {
     const restHr = Number((document.getElementById('z-rest') as HTMLInputElement).value);
     const fthrRaw = (document.getElementById('z-fthr') as HTMLInputElement).value;
     const fthr = fthrRaw ? Number(fthrRaw) : undefined;
+    const ctlTau = Number((document.getElementById('z-ctltau') as HTMLInputElement).value) || 42;
+    const atlTau = Number((document.getElementById('z-atltau') as HTMLInputElement).value) || 7;
+    const tssFactor = Number((document.getElementById('z-tssfactor') as HTMLInputElement).value) || 2.06;
     const zones = cfg.zones.map((zn, i) => ({
-      ...zn,
+      name: (document.getElementById(`z-name${i}`) as HTMLInputElement).value || zn.name,
+      lo: zn.lo,
       hi: Math.min(1.01, Number((document.getElementById(`z-z${i}`) as HTMLInputElement).value)),
     }));
     for (let i = 0; i < zones.length; i++) zones[i].lo = i === 0 ? 0 : zones[i - 1].hi;
-    cfg = { ...cfg, hrMax, restHr, fthr, zones };
+    cfg = { ...cfg, hrMax, restHr, fthr, ctlTau, atlTau, tssFactor, zones };
     saveZones(cfg);
-    setCtx(cfg, units, goals);
+    setCtx(cfg, units, goals, prefs);
     close();
     refresh();
     setStatus(t('zones_saved'), 'ok');
@@ -527,6 +558,8 @@ function openGoals() {
       <h3>${t('goals_title')}</h3>
       <label class="zfield">${t('goals_weekly')}<input id="g-wk" type="number" min="0" step="1" value="${goals.weeklyKm ?? ''}" placeholder="e.g. 40" /></label>
       <label class="zfield">${t('goals_easy')}<input id="g-easy" type="number" min="0" max="100" step="1" value="${goals.easyPct}" /></label>
+      <label class="zfield">${t('easy_zones')}<input id="g-easyzones" type="number" min="1" max="5" step="1" value="${goals.easyZones}" /></label>
+      <label class="zfield">${t('riegel_exp')}<input id="g-riegel" type="number" min="0.8" max="1.5" step="0.01" value="${goals.riegelExp}" /></label>
       <div class="modal-actions">
         <button id="g-save" type="button">${t('zones_save')}</button>
         <button id="g-close" type="button">${t('zones_cancel')}</button>
@@ -546,6 +579,8 @@ function openGoals() {
     goals = {
       weeklyKm: wk ? Number(wk) : null,
       easyPct: Number((document.getElementById('g-easy') as HTMLInputElement).value) || 80,
+      riegelExp: Number((document.getElementById('g-riegel') as HTMLInputElement).value) || 1.06,
+      easyZones: Number((document.getElementById('g-easyzones') as HTMLInputElement).value) || 2,
     };
     saveGoals();
     close();

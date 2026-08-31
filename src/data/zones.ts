@@ -17,6 +17,8 @@ export const DEFAULT_ZONES: ZonesConfig = {
   // HR TSS factor: 1h fully in Z4 (~threshold) ≈ 100 TSS
   // using HRmax%: Z4 center ≈ 90% -> 60 min * (90/100)^2 ≈ 48.6 min => factor ~2.06
   tssFactor: 2.06,
+  ctlTau: 42,
+  atlTau: 7,
 };
 
 const STORE_KEY = 'strava-offline:zones';

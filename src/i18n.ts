@@ -183,12 +183,24 @@ const EN: Dict = {
   zones_cancel: 'Cancel',
   zones_reset_done: 'Reset to default zones',
   zones_saved: 'Zone settings saved (all charts recomputed)',
+  training_model: 'Training model',
+  ctl_tau: 'CTL time constant (days)',
+  atl_tau: 'ATL time constant (days)',
+  tss_factor: 'TSS factor',
+  zone_names_and_bounds: 'Zone names & bounds (fraction of HRmax):',
 
   // ---- goals modal ----
   goals_title: 'Goal settings',
   goals_weekly: 'Weekly distance goal (km, blank = off)',
   goals_easy: 'Easy % goal',
   goals_saved: 'Goals saved',
+  riegel_exp: 'Riegel exponent',
+  easy_zones: 'Easy zones (how many low zones count as easy)',
+
+  // ---- preferences ----
+  week_start: 'Week start',
+  week_sun: 'Sun',
+  week_mon: 'Mon',
 
   // ---- statuses ----
   st_parsing: 'Parsing…',

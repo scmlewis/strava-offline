@@ -6,6 +6,10 @@ export interface ZonesConfig {
   zones: ManualZone[]; // Z1..Z5
   /** factor to convert time-in-zone (seconds) to TSS */
   tssFactor: number;
+  /** CTL exponential smoothing time constant (days, default 42) */
+  ctlTau: number;
+  /** ATL exponential smoothing time constant (days, default 7) */
+  atlTau: number;
 }
 
 export interface ManualZone {
@@ -23,6 +27,14 @@ export interface Units {
 export interface Goals {
   weeklyKm: number | null; // null = no target
   easyPct: number; // target easy%, default 80
+  /** Riegel race prediction exponent (default 1.06) */
+  riegelExp: number;
+  /** how many low zones count as "easy" (default 2 = Z1+Z2) */
+  easyZones: number;
+}
+
+export interface Preferences {
+  weekStart: 'sun' | 'mon';
 }
 
 export interface TrackPoint {

@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { Activity, ZonesConfig, Units, Goals } from './types';
+import type { Activity, ZonesConfig, Units, Goals, Preferences } from './types';
 import { DEFAULT_ZONES } from './zones';
 
 export class StravaDB extends Dexie {
@@ -24,7 +24,7 @@ export async function clearActivities(): Promise<void> {
   await db.activities.clear();
 }
 
-const SETTINGS_KEYS = ['strava-offline:zones', 'goals', 'unitPref', 'filterCollapsed'] as const;
+const SETTINGS_KEYS = ['strava-offline:zones', 'goals', 'unitPref', 'filterCollapsed', 'prefs'] as const;
 
 /** Remove all activities from IndexedDB and all settings from localStorage. */
 export async function clearAllData(): Promise<void> {
@@ -40,12 +40,14 @@ export interface BackupBundle {
   zones: ZonesConfig;
   goals: Goals;
   units: Units;
+  prefs?: Preferences;
   activities: Activity[];
 }
 
 const ZONES_KEY = 'strava-offline:zones';
 const GOALS_KEY = 'goals';
 const UNITS_KEY = 'unitPref';
+const PREFS_KEY = 'prefs';
 
 function readJson<T>(key: string): T | null {
   try {
@@ -69,8 +71,9 @@ export async function exportBackup(): Promise<BackupBundle> {
     version: 1,
     exportedAt: new Date().toISOString(),
     zones: readJson<ZonesConfig>(ZONES_KEY) ?? DEFAULT_ZONES,
-    goals: readJson<Goals>(GOALS_KEY) ?? { weeklyKm: null, easyPct: 80 },
+    goals: readJson<Goals>(GOALS_KEY) ?? { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 },
     units: readJson<Units>(UNITS_KEY) ?? { dist: 'km', pace: 'min/km' },
+    prefs: readJson<Preferences>(PREFS_KEY) ?? { weekStart: 'sun' },
     activities,
   };
 }
@@ -100,6 +103,7 @@ export async function importBackup(bundle: BackupBundle): Promise<number> {
   if (bundle.zones) writeJson(ZONES_KEY, bundle.zones);
   if (bundle.goals) writeJson(GOALS_KEY, bundle.goals);
   if (bundle.units) writeJson(UNITS_KEY, bundle.units);
+  if (bundle.prefs) writeJson(PREFS_KEY, bundle.prefs);
   await db.activities.bulkPut(bundle.activities);
   return bundle.activities.length;
 }

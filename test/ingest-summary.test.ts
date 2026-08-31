@@ -74,8 +74,8 @@ async function main() {
   const good: BackupBundle = {
     version: 1,
     exportedAt: new Date().toISOString(),
-    zones: { hrMax: 200, restHr: 50, zones: [], tssFactor: 1 },
-    goals: { weeklyKm: 40, easyPct: 80 },
+    zones: { hrMax: 200, restHr: 50, zones: [], tssFactor: 1, ctlTau: 42, atlTau: 7 },
+    goals: { weeklyKm: 40, easyPct: 80, riegelExp: 1.06, easyZones: 2 },
     units: { dist: 'km', pace: 'min/km' },
     activities: [{ id: 'csv:1', source: 'csv', date: '2024-01-01', ts: 1, name: 'Run', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 150, hrHistogram: null } as Activity],
   };

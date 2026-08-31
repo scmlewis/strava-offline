@@ -84,7 +84,7 @@ export interface LoadPoint {
 
 /**
  * Exponentially-weighted CTL/ATL over a continuous daily series.
- * CTL tau=42, ATL tau=7. Anchored to first day with data.
+ * CTL/ATL time constants from config (default 42/7 days). Anchored to first day with data.
  */
 export function computeLoad(acts: Activity[], cfg: ZonesConfig): LoadPoint[] {
   const daily = dailyTSS(acts, cfg);
@@ -101,8 +101,8 @@ export function computeLoad(acts: Activity[], cfg: ZonesConfig): LoadPoint[] {
     days.push(toLocalDate(t));
   }
 
-  const ctlA = 1 - Math.exp(-1 / 42);
-  const atlA = 1 - Math.exp(-1 / 7);
+  const ctlA = 1 - Math.exp(-1 / cfg.ctlTau);
+  const atlA = 1 - Math.exp(-1 / cfg.atlTau);
   let ctl = 0;
   let atl = 0;
   const out: LoadPoint[] = [];
@@ -180,9 +180,7 @@ const RACE_DISTANCES: Array<{ km: number; label: string }> = [
   { km: 42.195, label: 'Marathon' },
 ];
 
-const RIEGEL = 1.06;
-
-export function computeRiegel(acts: Activity[]): RacePrediction[] {
+export function computeRiegel(acts: Activity[], riegelExp = 1.06): RacePrediction[] {
   const prs = computePRs(acts);
   const anchors = prs.filter((p) => p.bestSec != null);
   if (anchors.length === 0) {
@@ -197,7 +195,7 @@ export function computeRiegel(acts: Activity[]): RacePrediction[] {
     if (r.km === anchorKm) {
       return { label: r.label, distanceKm: r.km, predictedSec: anchorSec, anchorLabel: anchor.label };
     }
-    const pred = anchorSec * Math.pow(r.km / anchorKm, RIEGEL);
+    const pred = anchorSec * Math.pow(r.km / anchorKm, riegelExp);
     return { label: r.label, distanceKm: r.km, predictedSec: pred, anchorLabel: anchor.label };
   });
 }
@@ -292,7 +290,7 @@ export interface EasyResult {
 }
 
 // easy = activity whose HR histogram is predominantly Z1/Z2
-export function computeEasy(acts: Activity[], cfg: ZonesConfig): EasyResult {
+export function computeEasy(acts: Activity[], cfg: ZonesConfig, easyZones = 2): EasyResult {
   let easy = 0;
   let hard = 0;
   let basis: 'avgHr' | 'histogram' = 'avgHr';
@@ -300,7 +298,8 @@ export function computeEasy(acts: Activity[], cfg: ZonesConfig): EasyResult {
   for (const a of acts) {
     if (a.hrHistogram) {
       usedHist = true;
-      const easySec = secondsInZone(a.hrHistogram, 1, cfg) + secondsInZone(a.hrHistogram, 2, cfg);
+      let easySec = 0;
+      for (let z = 1; z <= easyZones; z++) easySec += secondsInZone(a.hrHistogram, z, cfg);
       const total = histogramSeconds(a.hrHistogram);
       if (total > 0) {
         if (easySec / total >= 0.5) easy++;
@@ -308,7 +307,7 @@ export function computeEasy(acts: Activity[], cfg: ZonesConfig): EasyResult {
       }
     } else if (a.avgHr != null) {
       const z = zoneForHr(a.avgHr, cfg);
-      if (z != null && z <= 2) easy++;
+      if (z != null && z <= easyZones) easy++;
       else hard++;
     }
   }

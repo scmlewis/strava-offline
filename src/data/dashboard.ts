@@ -1,6 +1,6 @@
 import uPlot from 'uplot';
 import 'uplot/dist/uPlot.min.css';
-import type { Activity, Units, Goals } from './types';
+import type { Activity, Units, Goals, Preferences } from './types';
 import { loadZones, zoneBpm, zoneForHr, type ZonesConfig } from './zones';
 import { icon } from '../icons';
 import { t } from '../i18n';
@@ -25,7 +25,8 @@ import {
 let plots: uPlot[] = [];
 let currentCfg: ZonesConfig = loadZones();
 let units: Units = { dist: 'km', pace: 'min/km' };
-let goals: Goals = { weeklyKm: null, easyPct: 80 };
+let goals: Goals = { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 };
+let prefs: Preferences = { weekStart: 'sun' };
 let lastActs: Activity[] = [];
 
 // ResizeObserver keeps each uPlot sized to its (responsive) container column,
@@ -205,7 +206,7 @@ function renderOverview(acts: Activity[]): HTMLElement {
 
 function renderCards(acts: Activity[]): HTMLElement {
   const s = computeSummary(acts);
-  const easy = computeEasy(acts, currentCfg);
+  const easy = computeEasy(acts, currentCfg, goals.easyZones);
   const load = computeLoad(acts, currentCfg);
   const tsb = load.length ? load[load.length - 1].tsb : 0;
   const ctl = load.length ? load[load.length - 1].ctl : 0;
@@ -256,7 +257,7 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
   const start = new Date(daily[0].date + 'T00:00:00');
   const end = new Date(daily[daily.length - 1].date + 'T00:00:00');
   const totalDays = Math.round((end.getTime() - start.getTime()) / 86400000) + 1;
-  const firstDow = start.getDay();
+  const firstDow = prefs.weekStart === 'mon' ? (start.getDay() + 6) % 7 : start.getDay();
   const cellCount = firstDow + totalDays;
   const weekCols = Math.ceil(cellCount / 7);
 
@@ -449,7 +450,7 @@ function renderPRs(acts: Activity[]): HTMLElement {
 }
 
 function renderRiegel(acts: Activity[]): HTMLElement {
-  const preds = computeRiegel(acts);
+  const preds = computeRiegel(acts, goals.riegelExp);
   const el = section(t('race_predictions'));
   const rows = preds
     .map((p) => `<tr><td>${esc(p.label)}</td><td>${p.predictedSec != null ? fmtPaceMin(p.predictedSec) : '—'}</td><td>${esc(p.anchorLabel || '—')}</td></tr>`)
@@ -758,10 +759,11 @@ export function renderDashboard(root: HTMLElement, acts: Activity[], ctx: DashCt
   });
 }
 
-export function setCtx(cfg: ZonesConfig, u: Units, g: Goals): void {
+export function setCtx(cfg: ZonesConfig, u: Units, g: Goals, p?: Preferences): void {
   currentCfg = cfg;
   units = u;
   goals = g;
+  if (p) prefs = p;
 }
 
 export function onCtxChange(root: HTMLElement, cb: () => void): void {
