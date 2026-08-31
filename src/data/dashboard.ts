@@ -110,9 +110,9 @@ function fmtTSS(tss: number | null): string {
 }
 
 // ---- shared building blocks ----
-function card(label: string, value: string, sub?: string, accent?: string): string {
+function card(label: string, value: string, sub?: string, accent?: string, small?: boolean): string {
   const style = accent ? ` style="--card-accent:${accent}"` : '';
-  return `<div class="card"${style}>
+  return `<div class="card${small ? ' card-sm' : ''}"${style}>
     <div class="card-label">${label}</div>
     <div class="card-value">${value}</div>
     ${sub ? `<div class="card-sub">${sub}</div>` : ''}
@@ -212,8 +212,8 @@ function renderCards(acts: Activity[]): HTMLElement {
   const cards = [
     card(t('card_activities'), String(s.count), undefined, '#34d399'),
     card(t('card_total_dist'), fmtDistance(s.totalDistanceKm), s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '', '#34d399'),
-    card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa'),
-    card(t('card_total_elev'), s.totalElevM ? fmtElev(s.totalElevM) : '—', undefined, '#fbbf24'),
+    card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa', true),
+    card(t('card_total_elev'), s.totalElevM ? fmtElev(s.totalElevM) : '—', undefined, '#fbbf24', true),
   ];
   if (easy.pct != null) {
     const ok = easy.pct >= goals.easyPct * 0.9;
@@ -233,7 +233,11 @@ function renderCards(acts: Activity[]): HTMLElement {
     cards.push(card(t('card_form'), tsb.toFixed(0), `${t('card_ctl')} ${ctl.toFixed(0)} · ${formLabel}`, accent));
   }
   if (s.firstDate && s.lastDate) {
-    cards.push(card(t('card_date_range'), `${s.firstDate}`, `→ ${s.lastDate}`, '#9aa0c0'));
+    const fmtShort = (d: string) => {
+      const dt = new Date(d + 'T00:00:00');
+      return `${dt.toLocaleString('en', { month: 'short' })} ${dt.getFullYear()}`;
+    };
+    cards.push(card(t('card_date_range'), `${fmtShort(s.firstDate)} → ${fmtShort(s.lastDate)}`, undefined, '#9aa0c0'));
   }
   const wrap = document.createElement('div');
   wrap.className = 'cards';
@@ -316,8 +320,8 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
       <span>${t('hm_less')}</span>
       <span class="hm-cell lvl-0"></span><span class="hm-cell lvl-1"></span><span class="hm-cell lvl-2"></span><span class="hm-cell lvl-3"></span><span class="hm-cell lvl-4"></span>
       <span>${t('hm_more')}</span>
-    </div>
-    <p class="hint">${t('hm_hint')}</p>`;
+      <span class="hm-info" title="${esc(t('hm_hint'))}">${icon('info', 14)}</span>
+    </div>`;
   return el;
 }
 
@@ -359,7 +363,7 @@ function renderLoad(acts: Activity[]): HTMLElement | null {
         {},
         { label: 'CTL', stroke: '#34d399', width: 2 },
         { label: 'ATL', stroke: '#fb923c', width: 2 },
-        { label: 'TSB', stroke: '#7a8299', width: 1, dash: [4, 3] },
+        { label: 'TSB', stroke: '#a78bfa', width: 1.5, fill: 'rgba(167,139,250,0.15)' },
       ],
       230,
       allY,

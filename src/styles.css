@@ -135,6 +135,7 @@ body {
 .ico-btn:hover { border-color: var(--accent); background: var(--surface-container-high); color: var(--accent); }
 .ico-btn:active { transform: scale(0.92); }
 .tb-actions { display: flex; align-items: center; gap: 6px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--outline); }
+.tb-sep { width: 1px; height: 20px; background: var(--outline-strong); margin: 0 2px; flex: none; }
 .tb-actions .ico-btn { width: 40px; height: 40px; }
 .act-reset { display: inline-flex; align-items: center; gap: 5px; background: rgba(248, 113, 113, 0.12); color: var(--danger); border: 1px solid rgba(248, 113, 113, 0.3); border-radius: var(--shape-sm); padding: 8px 12px; cursor: pointer; font-family: var(--font); font-size: 0.82rem; transition: transform 0.1s; }
 .act-reset:disabled { opacity: 0.4; cursor: default; }
@@ -198,8 +199,8 @@ button .icon { vertical-align: middle; }
 .tb-inline input[type="date"] { width: 140px; }
 
 /* ---- Dashboard ---- */
-.dashboard { display: flex; flex-direction: column; gap: 16px; }
-.stack { display: flex; flex-direction: column; gap: 16px; }
+.dashboard { display: flex; flex-direction: column; gap: 12px; }
+.stack { display: flex; flex-direction: column; gap: 12px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(168px, 1fr)); gap: 12px; }
 .card {
   position: relative; overflow: hidden;
@@ -211,6 +212,7 @@ button .icon { vertical-align: middle; }
 .card:hover { border-color: var(--outline-strong); }
 .card-label { font-size: 0.72rem; color: var(--muted); font-weight: 500; letter-spacing: 0.02em; }
 .card-value { font-size: 1.55rem; font-weight: 700; line-height: 1.1; margin: 6px 0 3px; letter-spacing: -0.02em; }
+.card-sm .card-value { font-size: 1.2rem; }
 .card-sub { font-size: 0.72rem; color: var(--muted); }
 
 /* ---- Charts grid ---- */
@@ -239,6 +241,8 @@ button .icon { vertical-align: middle; }
 .hm-cell.lvl-4 { background: #7df0a8; }
 .hm-legend { display: flex; align-items: center; gap: 4px; font-size: 0.7rem; color: var(--muted); margin-top: 10px; }
 .hm-legend .hm-cell { display: inline-block; }
+.hm-info { cursor: help; opacity: 0.5; display: inline-flex; vertical-align: middle; margin-left: 4px; }
+.hm-info:hover { opacity: 1; }
 
 /* ---- Goals ---- */
 .goal-box { display: flex; flex-direction: column; gap: 10px; }

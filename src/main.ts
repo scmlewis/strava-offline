@@ -75,7 +75,13 @@ function setStatus(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   statusEl.hidden = false;
   statusEl.className = `status ${kind}`;
   statusEl.textContent = msg;
+  // Auto-dismiss success/info after 3s
+  if (kind !== 'err') {
+    clearTimeout(setStatus._timer);
+    setStatus._timer = window.setTimeout(() => { statusEl.hidden = true; }, 3000);
+  }
 }
+namespace setStatus { export let _timer: number; }
 
 const progressEl = document.getElementById('progress') as HTMLDivElement;
 const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
@@ -243,9 +249,12 @@ function buildToolbar() {
     <div class="tb-actions">
       <button id="btn-backup" type="button" class="ico-btn" title="${t('backup')}">${icon('download')}</button>
       <button id="btn-restore" type="button" class="ico-btn" title="${t('restore')}">${icon('upload')}</button>
+      <span class="tb-sep"></span>
       <button id="btn-clear" type="button" class="ico-btn" title="${t('clear_data')}">${icon('trash')}</button>
+      <span class="tb-sep"></span>
       <button id="btn-zones" type="button" class="ico-btn" title="${t('zones')}">${icon('heart')}</button>
       <button id="btn-goals" type="button" class="ico-btn" title="${t('goals')}">${icon('target')}</button>
+      <span class="tb-sep"></span>
       <button id="btn-diag" type="button" class="ico-btn" title="${t('diagnostics')}">${icon('list')}</button>
       <button id="btn-about" type="button" class="ico-btn" title="${t('about')}">${icon('info')}</button>
     </div>`;
