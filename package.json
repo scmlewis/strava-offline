@@ -19,6 +19,7 @@
   "dependencies": {
     "dexie": "^4.0.8",
     "fit-file-parser": "^5.0.2",
+    "jszip": "^3.10.1",
     "pako": "^2.2.0",
     "papaparse": "^5.4.1",
     "uplot": "^1.6.31"
@@ -30,7 +31,6 @@
     "@vitest/coverage-v8": "^3.2.7",
     "@xmldom/xmldom": "^0.8.10",
     "eslint": "^10.10.0",
-    "jszip": "^3.10.1",
     "prettier": "^3.9.6",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
