@@ -1,5 +1,6 @@
 import { DOMParser as XDOMParser } from '@xmldom/xmldom';
-(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
+(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser =
+  XDOMParser as unknown as typeof DOMParser;
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ingestFiles, type IngestSummary } from '../src/data/zip.ts';
@@ -11,9 +12,15 @@ beforeEach(() => {
   for (const k of Object.keys(store)) delete store[k];
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => store[k] ?? null,
-    setItem: (k: string, v: string) => { store[k] = v; },
-    removeItem: (k: string) => { delete store[k]; },
-    clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+    clear: () => {
+      for (const k of Object.keys(store)) delete store[k];
+    },
     key: () => null,
     length: 0,
   } as Storage);
@@ -22,8 +29,12 @@ beforeEach(() => {
 function mockFile(name: string, buf: Uint8Array) {
   return {
     name,
-    async arrayBuffer() { return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength); },
-    async text() { return ''; },
+    async arrayBuffer() {
+      return buf.buffer.slice(buf.byteOffset, buf.byteOffset + buf.byteLength);
+    },
+    async text() {
+      return '';
+    },
   } as unknown as File;
 }
 
@@ -67,7 +78,20 @@ describe('importBackup validation', () => {
       zones: { hrMax: 200, restHr: 50, zones: [], tssFactor: 1, ctlTau: 42, atlTau: 7 },
       goals: { weeklyKm: 40, easyPct: 80, riegelExp: 1.06, easyZones: 2 },
       units: { dist: 'km', pace: 'min/km' },
-      activities: [{ id: 'csv:1', source: 'csv', date: '2024-01-01', ts: 1, name: 'Run', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 150, hrHistogram: null } as Activity],
+      activities: [
+        {
+          id: 'csv:1',
+          source: 'csv',
+          date: '2024-01-01',
+          ts: 1,
+          name: 'Run',
+          type: 'Run',
+          distanceKm: 5,
+          movingTimeMin: 25,
+          avgHr: 150,
+          hrHistogram: null,
+        } as Activity,
+      ],
     };
     expect(() => validateBackup(good)).not.toThrow();
   });

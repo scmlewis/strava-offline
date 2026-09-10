@@ -1,0 +1,10 @@
+# Review package: 95c0672..4e15863
+
+## Commits
+4e15863 fix: enable touch-responsive chart cursors for mobile
+
+## Files changed
+ src/data/dashboard.ts | 4 ++++  1 file changed, 4 insertions(+)
+
+## Diff
+diff --git a/src/data/dashboard.ts b/src/data/dashboard.ts index 2037c54..df7cfbb 100644 --- a/src/data/dashboard.ts +++ b/src/data/dashboard.ts @@ -157,20 +157,24 @@ function plotOpts(series: uPlot.Series[], height = 220, yValues?: number[]): uPl          grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },          ticks: { stroke: 'rgba(255,255,255,0.08)' },        },        {          stroke: '#9aa0c0',          grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },          ticks: { stroke: 'rgba(255,255,255,0.08)' },        },      ],      legend: { show: false }, +    cursor: { +      drag: { x: false, y: false }, +      focus: { prox: 20 }, +    },    };  }    function section(title: string): HTMLElement {    const el = document.createElement('div');    el.className = 'chart-wrap';    const h = document.createElement('h3');    h.textContent = title;    el.appendChild(h);    return el;

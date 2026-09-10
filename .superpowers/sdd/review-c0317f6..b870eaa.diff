@@ -1,0 +1,10 @@
+# Review package: c0317f6..b870eaa
+
+## Commits
+b870eaa chore: add hidden source maps for production debugging
+
+## Files changed
+ vite.config.ts | 3 +++  1 file changed, 3 insertions(+)
+
+## Diff
+diff --git a/vite.config.ts b/vite.config.ts index 7e67746..9e0b160 100644 --- a/vite.config.ts +++ b/vite.config.ts @@ -1,16 +1,19 @@  import { defineConfig } from 'vite';  import { VitePWA } from 'vite-plugin-pwa';  import { visualizer } from 'rollup-plugin-visualizer';    export default defineConfig({    base: './', +  build: { +    sourcemap: 'hidden', +  },    plugins: [      VitePWA({        registerType: 'autoUpdate',        includeAssets: ['favicon.svg'],        manifest: {          name: 'Strava Offline Analyzer',          short_name: 'Strava Analyzer',          description: 'Local-first PWA — analyze your running data offline',          theme_color: '#1a1a2e',          background_color: '#1a1a2e',

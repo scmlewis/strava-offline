@@ -1,0 +1,10 @@
+# Review package: ece3c3d..a12d9c1
+
+## Commits
+a12d9c1 ci: add lint, format, typecheck, and test steps before build
+
+## Files changed
+ .github/workflows/deploy.yml | 4 ++++  1 file changed, 4 insertions(+)
+
+## Diff
+diff --git a/.github/workflows/deploy.yml b/.github/workflows/deploy.yml index d7f9245..ec05961 100644 --- a/.github/workflows/deploy.yml +++ b/.github/workflows/deploy.yml @@ -17,20 +17,24 @@ concurrency:  jobs:    build:      runs-on: ubuntu-latest      steps:        - uses: actions/checkout@v4        - uses: actions/setup-node@v4          with:            node-version: 20            cache: npm        - run: npm ci +      - run: npm run format:check +      - run: npm run lint +      - run: npm run typecheck +      - run: npm test        - run: npm run build        - uses: actions/configure-pages@v5        - uses: actions/upload-pages-artifact@v3          with:            path: dist      deploy:      needs: build      runs-on: ubuntu-latest      environment:

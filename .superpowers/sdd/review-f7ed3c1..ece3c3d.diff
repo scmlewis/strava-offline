@@ -1,0 +1,10 @@
+# Review package: f7ed3c1..ece3c3d
+
+## Commits
+ece3c3d chore: add Vitest coverage reporting with v8
+
+## Files changed
+ vitest.config.ts | 12 ++++++++++++  1 file changed, 12 insertions(+)
+
+## Diff
+diff --git a/vitest.config.ts b/vitest.config.ts index 4eb4075..a8a3fff 100644 --- a/vitest.config.ts +++ b/vitest.config.ts @@ -1,10 +1,22 @@  import { defineConfig } from 'vitest/config';    export default defineConfig({    test: {      globals: true,      environment: 'node',      include: ['test/**/*.test.ts'],      testTimeout: 30000, +    coverage: { +      provider: 'v8', +      include: ['src/**/*.ts'], +      exclude: ['src/vite-env.d.ts'], +      reporter: ['text', 'html'], +      thresholds: { +        statements: 80, +        branches: 70, +        functions: 80, +        lines: 80, +      }, +    },    },  });

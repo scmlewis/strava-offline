@@ -34,7 +34,9 @@ function loadTheme(): 'dark' | 'light' | 'system' {
   try {
     const raw = localStorage.getItem('theme');
     if (raw === 'light' || raw === 'dark') return raw;
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return 'system';
 }
 
@@ -530,7 +532,7 @@ async function onBackup() {
   if (sizeMB > 50) {
     const proceed = window.confirm(
       t('backup_large', { size: sizeMB.toFixed(1) }) ||
-        `Backup is ${sizeMB.toFixed(1)} MB. This may take a while to download and restore. Continue?`
+        `Backup is ${sizeMB.toFixed(1)} MB. This may take a while to download and restore. Continue?`,
     );
     if (!proceed) return;
   }
@@ -762,7 +764,11 @@ async function handleFiles(files: File[] | FileList) {
         `Strava Offline: skipped ${summary.issues.length} file(s) during import:`,
         summary.issues,
       );
-      showToast(t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }), 'success', 6000);
+      showToast(
+        t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }),
+        'success',
+        6000,
+      );
     } else {
       showToast(t('st_imported', { n: acts.length }), 'success');
     }
@@ -897,7 +903,9 @@ document.addEventListener('keydown', (ev) => {
 
   if (ev.key === '/') {
     ev.preventDefault();
-    const searchInput = document.querySelector('.toolbar input[type="search"]') as HTMLInputElement | null;
+    const searchInput = document.querySelector(
+      '.toolbar input[type="search"]',
+    ) as HTMLInputElement | null;
     if (searchInput) searchInput.focus();
     return;
   }
@@ -928,10 +936,14 @@ function openShortcutsOverlay() {
     </div>`;
   document.body.appendChild(overlay);
   overlay.addEventListener('click', (ev) => {
-    if (ev.target === overlay || (ev.target as HTMLElement).id === 'close-shortcuts') overlay.remove();
+    if (ev.target === overlay || (ev.target as HTMLElement).id === 'close-shortcuts')
+      overlay.remove();
   });
   document.addEventListener('keydown', function onEsc(e) {
-    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+    if (e.key === 'Escape') {
+      overlay.remove();
+      document.removeEventListener('keydown', onEsc);
+    }
   });
 }
 

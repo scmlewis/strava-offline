@@ -1,5 +1,6 @@
 import { DOMParser as XDOMParser } from '@xmldom/xmldom';
-(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
+(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser =
+  XDOMParser as unknown as typeof DOMParser;
 
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_ZONES } from '../src/data/zones.ts';
@@ -36,13 +37,29 @@ ${trkpts}
 }
 
 function race(id: string, type: string, km: number, sec: number, date: string): Activity {
-  return { id, source: 'csv', date, ts: Date.parse(date + 'T08:00:00'), name: type, type, distanceKm: km, movingTimeMin: sec / 60, avgHr: 160, hrHistogram: null } as Activity;
+  return {
+    id,
+    source: 'csv',
+    date,
+    ts: Date.parse(date + 'T08:00:00'),
+    name: type,
+    type,
+    distanceKm: km,
+    movingTimeMin: sec / 60,
+    avgHr: 160,
+    hrHistogram: null,
+  } as Activity;
 }
 
 describe('GPX parsing + real HR histogram', () => {
   const t0 = Date.parse('2024-03-01T00:00:00Z');
   const pts: Array<{ hr: number; t: string; lat: number; lon: number }> = [];
-  const spec = [[120, 10], [148, 20], [170, 6], [195, 4]] as const;
+  const spec = [
+    [120, 10],
+    [148, 20],
+    [170, 6],
+    [195, 4],
+  ] as const;
   let idx = 0;
   for (const [hr, n] of spec) {
     for (let i = 0; i < n; i++) {
@@ -61,7 +78,8 @@ describe('GPX parsing + real HR histogram', () => {
   it('builds real 1-bpm histogram', () => {
     expect(gpxAct.hrHistogram).not.toBeNull();
     let totalSamples = 0;
-    for (const k of Object.keys(gpxAct.hrHistogram!)) totalSamples += gpxAct.hrHistogram![Number(k)];
+    for (const k of Object.keys(gpxAct.hrHistogram!))
+      totalSamples += gpxAct.hrHistogram![Number(k)];
     expect(totalSamples).toBe(pts.length);
     expect(gpxAct.hrHistogram![120]).toBe(10);
     expect(gpxAct.hrHistogram![148]).toBe(20);
@@ -82,7 +100,12 @@ describe('GPX parsing + real HR histogram', () => {
 describe('zone distribution from real GPX histogram', () => {
   const t0 = Date.parse('2024-03-01T00:00:00Z');
   const pts: Array<{ hr: number; t: string; lat: number; lon: number }> = [];
-  const spec = [[120, 10], [148, 20], [170, 6], [195, 4]] as const;
+  const spec = [
+    [120, 10],
+    [148, 20],
+    [170, 6],
+    [195, 4],
+  ] as const;
   let idx = 0;
   for (const [hr, n] of spec) {
     for (let i = 0; i < n; i++) {
@@ -175,8 +198,32 @@ describe('VDOT + Jack Daniels paces', () => {
 describe('Climb Score', () => {
   it('higher gain -> higher score', () => {
     const climbActs: Activity[] = [
-      { id: 'c1', source: 'csv', date: '2024-04-01', ts: Date.parse('2024-04-01T08:00:00'), name: 'Hill', type: 'Run', distanceKm: 10, movingTimeMin: 60, avgHr: 150, hrHistogram: null, elevationGainM: 500 } as Activity,
-      { id: 'c2', source: 'csv', date: '2024-04-02', ts: Date.parse('2024-04-02T08:00:00'), name: 'Flat', type: 'Run', distanceKm: 10, movingTimeMin: 50, avgHr: 150, hrHistogram: null, elevationGainM: 50 } as Activity,
+      {
+        id: 'c1',
+        source: 'csv',
+        date: '2024-04-01',
+        ts: Date.parse('2024-04-01T08:00:00'),
+        name: 'Hill',
+        type: 'Run',
+        distanceKm: 10,
+        movingTimeMin: 60,
+        avgHr: 150,
+        hrHistogram: null,
+        elevationGainM: 500,
+      } as Activity,
+      {
+        id: 'c2',
+        source: 'csv',
+        date: '2024-04-02',
+        ts: Date.parse('2024-04-02T08:00:00'),
+        name: 'Flat',
+        type: 'Run',
+        distanceKm: 10,
+        movingTimeMin: 50,
+        avgHr: 150,
+        hrHistogram: null,
+        elevationGainM: 50,
+      } as Activity,
     ];
     const climb = computeClimbScore(climbActs);
     expect(climb.length).toBe(2);
@@ -189,9 +236,27 @@ describe('Climb Score', () => {
 describe('Streak computation', () => {
   it('longest streak and current streak', () => {
     const streakActs: Activity[] = [];
-    const dates = ['2024-05-01', '2024-05-02', '2024-05-03', '2024-05-04', '2024-05-05', '2024-05-10'];
+    const dates = [
+      '2024-05-01',
+      '2024-05-02',
+      '2024-05-03',
+      '2024-05-04',
+      '2024-05-05',
+      '2024-05-10',
+    ];
     dates.forEach((d, i) =>
-      streakActs.push({ id: 's' + i, source: 'csv', date: d, ts: Date.parse(d + 'T08:00:00'), name: 'Run', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 140, hrHistogram: null } as Activity),
+      streakActs.push({
+        id: 's' + i,
+        source: 'csv',
+        date: d,
+        ts: Date.parse(d + 'T08:00:00'),
+        name: 'Run',
+        type: 'Run',
+        distanceKm: 5,
+        movingTimeMin: 25,
+        avgHr: 140,
+        hrHistogram: null,
+      } as Activity),
     );
     const st = computeStreaks(streakActs);
     expect(st.longest).toBe(5);
@@ -209,7 +274,9 @@ describe('ZIP ingest: CSV + GPX merge by Strava id', () => {
     for (let i = 0; i < 12; i++) {
       const hr = i < 4 ? 140 : 175;
       const t = new Date(Date.parse('2024-06-01T00:00:00Z') + i * 30000).toISOString();
-      gpxPts.push(`      <trkpt lat="${(22.3 + i * 0.001).toFixed(4)}" lon="${(114.1 + i * 0.001).toFixed(4)}"><ele>10</ele><time>${t}</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${hr}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`);
+      gpxPts.push(
+        `      <trkpt lat="${(22.3 + i * 0.001).toFixed(4)}" lon="${(114.1 + i * 0.001).toFixed(4)}"><ele>10</ele><time>${t}</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${hr}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`,
+      );
     }
     const GPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
@@ -223,8 +290,12 @@ ${gpxPts.join('\n')}
     const zipBuf = await zip.generateAsync({ type: 'uint8array' });
     const mockZip = {
       name: 'strava-export.zip',
-      async arrayBuffer() { return zipBuf.buffer.slice(zipBuf.byteOffset, zipBuf.byteOffset + zipBuf.byteLength); },
-      async text() { return ''; },
+      async arrayBuffer() {
+        return zipBuf.buffer.slice(zipBuf.byteOffset, zipBuf.byteOffset + zipBuf.byteLength);
+      },
+      async text() {
+        return '';
+      },
     } as unknown as File;
     const merged = await ingestFiles([mockZip]);
     expect(merged.activities.length).toBe(1);

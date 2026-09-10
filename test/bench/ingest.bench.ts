@@ -7,13 +7,16 @@ import type { Activity } from '../../src/data/types.ts';
 
 // Generate a large CSV dataset
 function generateCSV(rows: number): string {
-  const header = 'Activity ID,Activity Date,Activity Name,Activity Type,Distance,Elapsed Time,Moving Time,Average Heart Rate,Max Heart Rate,Average Speed,Elevation Gain,Average Run Cadence';
+  const header =
+    'Activity ID,Activity Date,Activity Name,Activity Type,Distance,Elapsed Time,Moving Time,Average Heart Rate,Max Heart Rate,Average Speed,Elevation Gain,Average Run Cadence';
   const lines = [header];
   for (let i = 0; i < rows; i++) {
     const hr = 130 + Math.floor(Math.random() * 50);
     const dist = (5 + Math.random() * 30).toFixed(1);
     const time = 1800 + Math.floor(Math.random() * 7200);
-    lines.push(`${i},2024-01-01 7:00:00 AM,Run ${i},Run,${dist},${time},${time - 120},${hr},${hr + 20},2.0,${Math.floor(Math.random() * 200)},88`);
+    lines.push(
+      `${i},2024-01-01 7:00:00 AM,Run ${i},Run,${dist},${time},${time - 120},${hr},${hr + 20},2.0,${Math.floor(Math.random() * 200)},88`,
+    );
   }
   return lines.join('\n');
 }
@@ -32,6 +35,11 @@ function generateActivities(n: number): Activity[] {
       distanceKm: 5 + Math.random() * 30,
       movingTimeMin: 30 + Math.random() * 120,
       avgHr: hr,
+      maxHr: null,
+      avgSpeedKmh: null,
+      elevationGainM: null,
+      elapsedTimeMin: null,
+      cadence: null,
       hrHistogram: { [hr]: 1800, [hr - 10]: 600 },
     });
   }
@@ -46,8 +54,10 @@ describe('CSV parsing', () => {
 });
 
 describe('GPX parsing', () => {
-  const pts = Array.from({ length: 500 }, (_, i) =>
-    `      <trkpt lat="${22.3 + i * 0.001}" lon="${114.1 + i * 0.001}"><ele>10</ele><time>2024-01-01T${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${140 + (i % 40)}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`,
+  const pts = Array.from(
+    { length: 500 },
+    (_, i) =>
+      `      <trkpt lat="${22.3 + i * 0.001}" lon="${114.1 + i * 0.001}"><ele>10</ele><time>2024-01-01T${String(Math.floor(i / 60)).padStart(2, '0')}:${String(i % 60).padStart(2, '0')}:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${140 + (i % 40)}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`,
   ).join('\n');
   const gpx = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">

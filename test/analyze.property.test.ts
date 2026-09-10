@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { activityTSS, computeLoad, vdotFromRace, computeStreaks } from '../src/data/analyze.ts';
+import { activityTSS, vdotFromRace, computeStreaks } from '../src/data/analyze.ts';
 import { DEFAULT_ZONES } from '../src/data/zones.ts';
 import type { Activity } from '../src/data/types.ts';
 
@@ -15,6 +15,11 @@ function makeActivity(overrides: Partial<Activity> = {}): Activity {
     distanceKm: 10,
     movingTimeMin: 50,
     avgHr: 150,
+    maxHr: null,
+    avgSpeedKmh: null,
+    elevationGainM: null,
+    elapsedTimeMin: null,
+    cadence: null,
     hrHistogram: { 140: 1800, 150: 1200 },
     ...overrides,
   };

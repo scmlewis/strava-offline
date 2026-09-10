@@ -1,5 +1,6 @@
 import { DOMParser as XDOMParser } from '@xmldom/xmldom';
-(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
+(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser =
+  XDOMParser as unknown as typeof DOMParser;
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { DEFAULT_ZONES, zoneForHr, loadZones, saveZones } from '../src/data/zones.ts';
@@ -30,9 +31,15 @@ beforeEach(() => {
   for (const k of Object.keys(store)) delete store[k];
   vi.stubGlobal('localStorage', {
     getItem: (k: string) => store[k] ?? null,
-    setItem: (k: string, v: string) => { store[k] = v; },
-    removeItem: (k: string) => { delete store[k]; },
-    clear: () => { for (const k of Object.keys(store)) delete store[k]; },
+    setItem: (k: string, v: string) => {
+      store[k] = v;
+    },
+    removeItem: (k: string) => {
+      delete store[k];
+    },
+    clear: () => {
+      for (const k of Object.keys(store)) delete store[k];
+    },
     key: () => null,
     length: 0,
   } as Storage);
@@ -197,7 +204,7 @@ describe('analyze.ts — PR + Riegel', () => {
   const g = parseGpx(GPX, '5000');
   const withRun = [
     ...acts,
-    { ...(g!.activity), type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
+    { ...g!.activity, type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
   ];
 
   it('finds 5K PR', () => {
@@ -230,7 +237,7 @@ describe('analyze.ts — VDOT / JD / climb / streak', () => {
   const g = parseGpx(GPX, '5000');
   const withRun = [
     ...acts,
-    { ...(g!.activity), type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
+    { ...g!.activity, type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
   ];
 
   it('VDOT in range for 5K@25:00', () => {
@@ -262,12 +269,34 @@ describe('analyze.ts — VDOT / JD / climb / streak', () => {
 
 describe('analyze.ts — intensity filter', () => {
   it('slow avg HR 120 = easy', () => {
-    const slow = { id: 'x1', source: 'csv', date: '2024-03-02', ts: new Date('2024-03-02T08:00:00').getTime(), name: 'E', type: 'Run', distanceKm: 5, movingTimeMin: 30, avgHr: 120, hrHistogram: null } as Activity;
+    const slow = {
+      id: 'x1',
+      source: 'csv',
+      date: '2024-03-02',
+      ts: new Date('2024-03-02T08:00:00').getTime(),
+      name: 'E',
+      type: 'Run',
+      distanceKm: 5,
+      movingTimeMin: 30,
+      avgHr: 120,
+      hrHistogram: null,
+    } as Activity;
     expect(computeEasy([slow], DEFAULT_ZONES).easyCount).toBe(1);
   });
 
   it('fast avg HR 190 = hard', () => {
-    const fast = { id: 'x2', source: 'csv', date: '2024-03-03', ts: new Date('2024-03-03T08:00:00').getTime(), name: 'I', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 190, hrHistogram: null } as Activity;
+    const fast = {
+      id: 'x2',
+      source: 'csv',
+      date: '2024-03-03',
+      ts: new Date('2024-03-03T08:00:00').getTime(),
+      name: 'I',
+      type: 'Run',
+      distanceKm: 5,
+      movingTimeMin: 25,
+      avgHr: 190,
+      hrHistogram: null,
+    } as Activity;
     expect(computeEasy([fast], DEFAULT_ZONES).easyCount).toBe(0);
   });
 });

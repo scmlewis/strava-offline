@@ -17,7 +17,7 @@
 }
 
 /* ---- Default dark theme (also applies when no data-theme is set) ---- */
-html[data-theme="dark"],
+html[data-theme='dark'],
 html:not([data-theme]) {
   --surface-dim: #0c0f14;
   --surface: #111318;
@@ -98,7 +98,7 @@ html:not([data-theme]) {
 }
 
 /* ---- Manual override: light ---- */
-html[data-theme="light"] {
+html[data-theme='light'] {
   --surface-dim: #f3f3f3;
   --surface: #ffffff;
   --surface-container-lowest: #ffffff;
@@ -137,7 +137,7 @@ html[data-theme="light"] {
 }
 
 /* ---- Manual override: dark ---- */
-html[data-theme="dark"] {
+html[data-theme='dark'] {
   --surface-dim: #0c0f14;
   --surface: #111318;
   --surface-container-lowest: #0b0e13;
@@ -1459,7 +1459,9 @@ kbd {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
   opacity: 0;
   transform: translateY(12px);
-  transition: opacity 0.25s, transform 0.25s;
+  transition:
+    opacity 0.25s,
+    transform 0.25s;
   pointer-events: auto;
 }
 
