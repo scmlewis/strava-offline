@@ -187,6 +187,33 @@ body {
   display: none !important;
 }
 
+/* ---- Dropzone features ---- */
+.dropzone-features {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 24px;
+  max-width: 400px;
+}
+
+.feature {
+  font-size: 0.85em;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.feature-icon {
+  font-size: 1.1em;
+}
+
+@media (max-width: 500px) {
+  .dropzone-features {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ---- Toolbar (collapsible) ---- */
 .toolbar {
   display: flex;

@@ -12,6 +12,8 @@ const EN: Dict = {
   dz_full_2:
     '(Strava → Settings → Export, you’ll get a zip containing activities.csv plus a GPX for each activity)',
   choose_file: 'Choose file',
+  dropzone_title: 'Drop your Strava export here',
+  dropzone_sub: 'or',
 
   // ---- nav ----
   nav_overview: 'Overview',

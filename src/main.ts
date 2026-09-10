@@ -210,8 +210,8 @@ function applyShellI18n() {
   };
   set('app-title', 'app_title');
   set('app-sub', 'app_sub');
-  set('dz-full-1', 'dz_full_1');
-  set('dz-full-2', 'dz_full_2');
+  set('dropzone-title', 'dropzone_title');
+  set('dropzone-sub', 'dropzone_sub');
   const pick = document.getElementById('pick-btn');
   if (pick) pick.textContent = t('choose_file');
   const pickMini = document.getElementById('pick-btn-mini');

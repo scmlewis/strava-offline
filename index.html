@@ -27,15 +27,17 @@
 
       <section id="dropzone" class="dropzone">
         <div class="dz-full">
-          <p id="dz-full-1">
-            Drop your Strava <strong>activities.csv</strong> or <strong>export zip</strong> here
-          </p>
-          <p class="hint" id="dz-full-2">
-            (Strava → Settings → Export, you'll get a zip containing activities.csv plus a GPX for
-            each activity)
-          </p>
-          <input id="file-input" type="file" accept=".csv,.zip" multiple hidden />
+          <h2 id="dropzone-title">Drop your Strava export here</h2>
+          <p id="dropzone-sub">or</p>
           <button id="pick-btn" type="button">Choose file</button>
+          <input id="file-input" type="file" accept=".csv,.zip" multiple hidden />
+          <div class="dropzone-features">
+            <div class="feature"><span class="feature-icon">&#127939;</span> Training load (TSS/CTL/ATL/TSB)</div>
+            <div class="feature"><span class="feature-icon">&#127942;</span> Personal records & race predictions</div>
+            <div class="feature"><span class="feature-icon">&#128202;</span> HR zone analysis & charts</div>
+            <div class="feature"><span class="feature-icon">&#128506;</span> Route mini-maps</div>
+            <div class="feature"><span class="feature-icon">&#128274;</span> 100% offline — data stays on your device</div>
+          </div>
         </div>
         <div class="dz-mini hidden">
           <span
