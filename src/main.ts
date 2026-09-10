@@ -490,7 +490,16 @@ function onDiagnostics() {
 // ---- backup / restore ----
 async function onBackup() {
   const bundle = await exportBackup();
-  const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+  const json = JSON.stringify(bundle, null, 2);
+  const sizeMB = new Blob([json]).size / (1024 * 1024);
+  if (sizeMB > 50) {
+    const proceed = window.confirm(
+      t('backup_large', { size: sizeMB.toFixed(1) }) ||
+        `Backup is ${sizeMB.toFixed(1)} MB. This may take a while to download and restore. Continue?`
+    );
+    if (!proceed) return;
+  }
+  const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

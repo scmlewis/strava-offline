@@ -217,6 +217,7 @@ const EN: Dict = {
     'Imported {n} activities · {skipped} skipped (details in console) · stored locally',
   st_progress: 'Importing… {done}/{total}',
   st_import_fail: 'Import failed: {e}',
+  backup_large: 'Backup is {size} MB. This may take a while to download and restore. Continue?',
   backup_done: 'Backup JSON exported',
   restore_done: 'Imported {n} activities + settings',
   restore_fail: 'Import failed: {e}',
