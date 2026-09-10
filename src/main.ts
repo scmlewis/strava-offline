@@ -28,6 +28,38 @@ let cfg: ZonesConfig = loadZones();
 let units: Units = loadUnits();
 let goals: Goals = loadGoals();
 let prefs: Preferences = loadPrefs();
+let theme: 'dark' | 'light' | 'system' = loadTheme();
+
+function loadTheme(): 'dark' | 'light' | 'system' {
+  try {
+    const raw = localStorage.getItem('theme');
+    if (raw === 'light' || raw === 'dark') return raw;
+  } catch { /* ignore */ }
+  return 'system';
+}
+
+function saveTheme(t: 'dark' | 'light' | 'system') {
+  theme = t;
+  localStorage.setItem('theme', t);
+  applyTheme();
+}
+
+function applyTheme() {
+  if (theme === 'system') {
+    document.documentElement.removeAttribute('data-theme');
+  } else {
+    document.documentElement.setAttribute('data-theme', theme);
+  }
+}
+
+applyTheme();
+
+function cycleTheme() {
+  const order: Array<'dark' | 'light' | 'system'> = ['dark', 'light', 'system'];
+  const next = order[(order.indexOf(theme) + 1) % order.length];
+  saveTheme(next);
+  showToast(t('theme_changed', { theme: t(`theme_${next}`) }), 'info');
+}
 
 interface Filters {
   type: string;
@@ -306,6 +338,7 @@ function buildToolbar() {
       <button id="btn-goals" type="button" class="ico-btn" title="${t('goals')}">${icon('target')}</button>
       <span class="tb-sep"></span>
       <button id="btn-diag" type="button" class="ico-btn" title="${t('diagnostics')}">${icon('list')}</button>
+      <button id="btn-theme" type="button" class="ico-btn" title="${t(`theme_${theme}`)}">${icon('contrast')}</button>
       <button id="btn-about" type="button" class="ico-btn" title="${t('about')}">${icon('info')}</button>
     </div>`;
 
@@ -413,6 +446,7 @@ function buildToolbar() {
   document.getElementById('btn-zones')!.addEventListener('click', openZoneSettings);
   document.getElementById('btn-goals')!.addEventListener('click', openGoals);
   document.getElementById('btn-diag')!.addEventListener('click', onDiagnostics);
+  document.getElementById('btn-theme')!.addEventListener('click', cycleTheme);
 }
 
 function resetFilters() {

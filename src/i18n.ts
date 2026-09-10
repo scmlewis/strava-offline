@@ -236,6 +236,12 @@ const EN: Dict = {
   clear_go: 'Clear everything',
   clear_done: 'All data cleared',
 
+  // ---- theme ----
+  theme_dark: 'Dark',
+  theme_light: 'Light',
+  theme_system: 'System',
+  theme_changed: 'Theme: {theme}',
+
   // ---- keyboard shortcuts ----
   shortcuts_title: 'Keyboard Shortcuts',
   shortcuts_help: 'Show this help',
