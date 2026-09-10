@@ -4,6 +4,9 @@ import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   base: './',
+  build: {
+    sourcemap: 'hidden',
+  },
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
