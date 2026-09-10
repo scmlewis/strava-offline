@@ -23,3 +23,5 @@ Starting HEAD: 6727b27
 - Task 17: complete (commits 95c0672..4e15863, review clean — touch-responsive chart cursors)
 - Task 18: complete (commits 4e15863..ef0f9eb, review clean — Playwright E2E tests added)
 - Task 19: complete (commits ef0f9eb..75b7efd, review clean — property-based tests added)
+- Task 20: complete (commits 75b7efd..bcb179b, review clean — performance benchmarks added)
+- CI fix: complete (commits bcb179b..09ec5d7 — fixed TS errors, unused import, prettierignore)
