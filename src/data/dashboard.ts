@@ -164,6 +164,10 @@ function plotOpts(series: uPlot.Series[], height = 220, yValues?: number[]): uPl
       },
     ],
     legend: { show: false },
+    cursor: {
+      drag: { x: false, y: false },
+      focus: { prox: 20 },
+    },
   };
 }
 
