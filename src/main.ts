@@ -850,6 +850,56 @@ window.addEventListener('unhandledrejection', (ev) => {
   statusEl.style.display = '';
 });
 
+// Keyboard shortcuts
+document.addEventListener('keydown', (ev) => {
+  if (ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement) return;
+
+  if (ev.key === '?') {
+    ev.preventDefault();
+    openShortcutsOverlay();
+    return;
+  }
+
+  if (ev.key === '/') {
+    ev.preventDefault();
+    const searchInput = document.querySelector('.toolbar input[type="search"]') as HTMLInputElement | null;
+    if (searchInput) searchInput.focus();
+    return;
+  }
+
+  const num = parseInt(ev.key, 10);
+  if (num >= 1 && num <= TABS.length && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+    ev.preventDefault();
+    ctx.tab = TABS[num - 1].id;
+    ctx.page = 0;
+    refresh();
+    return;
+  }
+});
+
+function openShortcutsOverlay() {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="modal" style="max-width:400px">
+      <h3>${esc(t('shortcuts_title'))}</h3>
+      <div style="display:grid;grid-template-columns:auto 1fr;gap:8px 16px;margin-top:12px;font-size:0.9em">
+        <kbd>?</kbd><span>${esc(t('shortcuts_help'))}</span>
+        <kbd>1</kbd>-<kbd>${TABS.length}</kbd><span>${esc(t('shortcuts_tabs'))}</span>
+        <kbd>/</kbd><span>${esc(t('shortcuts_search'))}</span>
+        <kbd>Esc</kbd><span>${esc(t('shortcuts_close'))}</span>
+      </div>
+      <button class="btn" style="margin-top:16px" id="close-shortcuts">${esc(t('close'))}</button>
+    </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click', (ev) => {
+    if (ev.target === overlay || (ev.target as HTMLElement).id === 'close-shortcuts') overlay.remove();
+  });
+  document.addEventListener('keydown', function onEsc(e) {
+    if (e.key === 'Escape') { overlay.remove(); document.removeEventListener('keydown', onEsc); }
+  });
+}
+
 // ---- boot ----
 loadActivities().then((acts) => {
   if (acts.length) {

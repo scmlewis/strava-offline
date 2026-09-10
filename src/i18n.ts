@@ -234,6 +234,13 @@ const EN: Dict = {
   clear_go: 'Clear everything',
   clear_done: 'All data cleared',
 
+  // ---- keyboard shortcuts ----
+  shortcuts_title: 'Keyboard Shortcuts',
+  shortcuts_help: 'Show this help',
+  shortcuts_tabs: 'Switch tab',
+  shortcuts_search: 'Focus search',
+  shortcuts_close: 'Close modal / overlay',
+
   // ---- global error boundary ----
   error_generic: 'Something went wrong: {message}',
 };
