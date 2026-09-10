@@ -13,6 +13,7 @@ import type { Activity, Units, Goals, Preferences } from './data/types';
 import { computeEasy } from './data/analyze';
 import { t } from './i18n';
 import { esc } from './utils';
+import { showToast } from './toast';
 
 const dropzone = document.getElementById('dropzone') as HTMLDivElement;
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -484,7 +485,7 @@ function onDiagnostics() {
   a.download = `strava-diagnostics-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  setStatus(t('diag_done', { total: allActs.length, withDist: withDist.length }), 'info');
+  showToast(t('diag_done', { total: allActs.length, withDist: withDist.length }), 'info');
 }
 
 // ---- backup / restore ----
@@ -506,7 +507,7 @@ async function onBackup() {
   a.download = `strava-backup-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
-  setStatus(t('backup_done'), 'ok');
+  showToast(t('backup_done'), 'success');
 }
 
 function onRestore() {
@@ -523,7 +524,7 @@ function onRestore() {
       cfg = loadZones();
       buildToolbar();
       refresh();
-      setStatus(t('restore_done', { n }), 'ok');
+      showToast(t('restore_done', { n }), 'success');
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // map known validation messages to friendly i18n strings
@@ -534,7 +535,7 @@ function onRestore() {
             msg.includes('missing its id')
           ? 'restore_bad_shape'
           : null;
-      setStatus(key ? t(key) : t('restore_fail', { e: msg }), 'err');
+      showToast(key ? t(key) : t('restore_fail', { e: msg }), 'error');
     }
   });
   inp.click();
@@ -583,13 +584,13 @@ function openClearData() {
     await clearAllData();
     resetAllState();
     close();
-    setStatus(t('clear_done'), 'ok');
+    showToast(t('clear_done'), 'success');
   });
   document.getElementById('clear-go')!.addEventListener('click', async () => {
     await clearAllData();
     resetAllState();
     close();
-    setStatus(t('clear_done'), 'ok');
+    showToast(t('clear_done'), 'success');
   });
 }
 
@@ -634,7 +635,7 @@ function openZoneSettings() {
     saveZones(cfg);
     close();
     refresh();
-    setStatus(t('zones_reset_done'), 'ok');
+    showToast(t('zones_reset_done'), 'success');
   });
   document.getElementById('z-save')!.addEventListener('click', () => {
     const hrMax = Number((document.getElementById('z-hrmax') as HTMLInputElement).value);
@@ -656,7 +657,7 @@ function openZoneSettings() {
     setCtx(cfg, units, goals, prefs);
     close();
     refresh();
-    setStatus(t('zones_saved'), 'ok');
+    showToast(t('zones_saved'), 'success');
   });
 }
 
@@ -700,7 +701,7 @@ function openGoals() {
     saveGoals();
     close();
     refresh();
-    setStatus(t('goals_saved'), 'ok');
+    showToast(t('goals_saved'), 'success');
   });
 }
 
@@ -713,7 +714,7 @@ async function handleFiles(files: File[] | FileList) {
     hideProgress();
     const acts = summary.activities;
     if (!acts.length) {
-      setStatus(t('st_no_acts'), 'err');
+      showToast(t('st_no_acts'), 'error');
       return;
     }
     await saveActivities(acts);
@@ -727,13 +728,13 @@ async function handleFiles(files: File[] | FileList) {
         `Strava Offline: skipped ${summary.issues.length} file(s) during import:`,
         summary.issues,
       );
-      setStatus(t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }), 'ok');
+      showToast(t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }), 'success', 6000);
     } else {
-      setStatus(t('st_imported', { n: acts.length }), 'ok');
+      showToast(t('st_imported', { n: acts.length }), 'success');
     }
   } catch (e) {
     hideProgress();
-    setStatus(t('st_import_fail', { e: e instanceof Error ? e.message : String(e) }), 'err');
+    showToast(t('st_import_fail', { e: e instanceof Error ? e.message : String(e) }), 'error');
   }
 }
 
