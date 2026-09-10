@@ -110,7 +110,10 @@ export async function ingestFiles(
           try {
             all.push(...parseActivitiesCsv(csvText));
           } catch (e) {
-            issues.push({ file: 'activities.csv', reason: e instanceof Error ? e.message : String(e) });
+            issues.push({
+              file: 'activities.csv',
+              reason: e instanceof Error ? e.message : String(e),
+            });
           }
         }
 
@@ -125,7 +128,10 @@ export async function ingestFiles(
             try {
               stream = await parseFitGz(gz as unknown as Uint8Array);
             } catch (e) {
-              issues.push({ file: entry.name, reason: `FIT parse failed: ${e instanceof Error ? e.message : String(e)}` });
+              issues.push({
+                file: entry.name,
+                reason: `FIT parse failed: ${e instanceof Error ? e.message : String(e)}`,
+              });
               stream = null;
             }
             if (stream && stream.startMs) {

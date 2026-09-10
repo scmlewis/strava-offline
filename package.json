@@ -10,6 +10,8 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src/ test/",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
     "test": "tsx test/ingest.test.ts && tsx test/fit.test.ts && tsx test/ingest-summary.test.ts && tsx test/acceptance.test.ts"
   },
   "dependencies": {
@@ -26,6 +28,7 @@
     "@xmldom/xmldom": "^0.8.10",
     "eslint": "^10.10.0",
     "jszip": "^3.10.1",
+    "prettier": "^3.9.6",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
     "typescript-eslint": "^8.70.0",

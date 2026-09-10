@@ -9,7 +9,8 @@ const EN: Dict = {
   app_title: 'Strava Offline Analyzer',
   app_sub: 'Local-first PWA · your data stays on your device',
   dz_full_1: 'Drop your Strava activities.csv or export zip here',
-  dz_full_2: '(Strava → Settings → Export, you’ll get a zip containing activities.csv plus a GPX for each activity)',
+  dz_full_2:
+    '(Strava → Settings → Export, you’ll get a zip containing activities.csv plus a GPX for each activity)',
   choose_file: 'Choose file',
 
   // ---- nav ----
@@ -94,7 +95,8 @@ const EN: Dict = {
   import_to_show: 'Shown after importing data.',
   hm_less: 'Less',
   hm_more: 'More (km)',
-  hm_hint: 'Color = total km that day (quantile-based 5 levels, so a long run does not wash out daily bars). Columns = weekday (Sun→Sat). Activities with no distance (manual logs / some rides) count as 0 km — uncolored but still included in analysis.',
+  hm_hint:
+    'Color = total km that day (quantile-based 5 levels, so a long run does not wash out daily bars). Columns = weekday (Sun→Sat). Activities with no distance (manual logs / some rides) count as 0 km — uncolored but still included in analysis.',
 
   // ---- charts ----
   weekly_volume: 'Last {n} weeks volume ({unit})',
@@ -122,7 +124,8 @@ const EN: Dict = {
   col_score: 'Score',
   col_gain: 'Climb',
   col_grade: 'Gradient',
-  climb_formula: 'Estimate = climb(m) × (1 + min(gradient,15%)×6); ranking only, not Strava’s proprietary formula.',
+  climb_formula:
+    'Estimate = climb(m) × (1 + min(gradient,15%)×6); ranking only, not Strava’s proprietary formula.',
   streak_title: 'Streak',
   streak_current: 'Current (today)',
   streak_longest: 'Longest',
@@ -155,13 +158,16 @@ const EN: Dict = {
 
   // ---- about ----
   about_title: 'About Strava Offline Analyzer',
-  about_p1: 'A pure front-end, zero-backend local running/cycling analytics tool. Your Strava data (activities.csv / GPX) stays only in this browser’s IndexedDB — never uploaded to any server.',
+  about_p1:
+    'A pure front-end, zero-backend local running/cycling analytics tool. Your Strava data (activities.csv / GPX) stays only in this browser’s IndexedDB — never uploaded to any server.',
   about_how: 'How to use',
   about_step1: 'Strava → Settings → Export data, you get a zip.',
   about_step2: 'Drag that zip or activities.csv onto the top upload area (or click “Choose file”).',
   about_step3: 'Once cached locally, it works offline.',
-  about_step4: 'Use the left tabs: Overview / Volume·Routes / Load·Pace / HR Zones / PR·Predict / Activity Log.',
-  about_step5: 'The top “Filter” toggles; supports type, date, weekday, intensity, distance, climb, pace.',
+  about_step4:
+    'Use the left tabs: Overview / Volume·Routes / Load·Pace / HR Zones / PR·Predict / Activity Log.',
+  about_step5:
+    'The top “Filter” toggles; supports type, date, weekday, intensity, distance, climb, pace.',
   about_features: 'Features',
   about_f1: 'Training load: CTL / ATL / TSB (Form), TSS',
   about_f2: 'HR zone distribution, Easy% stats',
@@ -169,7 +175,8 @@ const EN: Dict = {
   about_f4: 'Personal best (PR) + Riegel race prediction',
   about_f5: 'Annual training calendar heatmap, streak',
   about_f6: 'Custom HR zones, weekly goal, units (km/mi)',
-  about_safe: 'Data safety: backup export makes a JSON; import can restore. This app connects to no network server; all computation runs on your machine.',
+  about_safe:
+    'Data safety: backup export makes a JSON; import can restore. This app connects to no network server; all computation runs on your machine.',
   about_ok: 'Got it',
 
   // ---- zones modal ----
@@ -206,7 +213,8 @@ const EN: Dict = {
   st_parsing: 'Parsing…',
   st_no_acts: 'No parseable activities found — is this a Strava export?',
   st_imported: 'Imported {n} activities · stored locally (offline)',
-  st_imported_skip: 'Imported {n} activities · {skipped} skipped (details in console) · stored locally',
+  st_imported_skip:
+    'Imported {n} activities · {skipped} skipped (details in console) · stored locally',
   st_progress: 'Importing… {done}/{total}',
   st_import_fail: 'Import failed: {e}',
   backup_done: 'Backup JSON exported',
@@ -219,7 +227,8 @@ const EN: Dict = {
 
   // ---- clear data modal ----
   clear_title: 'Clear all data',
-  clear_confirm: 'This will permanently delete all {n} activities and settings (zones, goals, units). This cannot be undone.',
+  clear_confirm:
+    'This will permanently delete all {n} activities and settings (zones, goals, units). This cannot be undone.',
   clear_backup_first: 'Export backup first',
   clear_go: 'Clear everything',
   clear_done: 'All data cleared',

@@ -1,5 +1,6 @@
 import { DOMParser as XDOMParser } from '@xmldom/xmldom';
-(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
+(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser =
+  XDOMParser as unknown as typeof DOMParser;
 
 import { DEFAULT_ZONES, zoneForHr, loadZones, saveZones } from '../src/data/zones.ts';
 import { parseActivitiesCsv } from '../src/data/csv.ts';
@@ -84,7 +85,10 @@ const easy = computeEasy(acts, DEFAULT_ZONES);
 ok(easy.basis === 'histogram', 'histogram basis now');
 ok(easy.easyCount === 2, '2 easy (Run 148, Ride 120)');
 ok(easy.hardCount === 1, '1 hard (Intervals 168)');
-ok(easy.pct != null && easy.pct > 50 && easy.pct < 80, `pct in range (got ${easy.pct?.toFixed(1)})`);
+ok(
+  easy.pct != null && easy.pct > 50 && easy.pct < 80,
+  `pct in range (got ${easy.pct?.toFixed(1)})`,
+);
 
 console.log('analyze.ts (daily volume / heatmap)');
 const daily = computeDailyVolume(acts);
@@ -126,7 +130,7 @@ const g = parseGpx(GPX, '5000');
 ok(g !== null, 'gpx parsed');
 const withRun = [
   ...acts,
-  { ...(g!.activity), type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
+  { ...g!.activity, type: 'Run', distanceKm: 5, movingTimeMin: 25 } as Activity,
 ];
 const prs = computePRs(withRun);
 const fiveK = prs.find((p) => p.label === '5K');
@@ -138,7 +142,10 @@ const mara = riegel.find((r) => r.label === 'Marathon');
 ok(mara!.predictedSec != null, 'Marathon predicted');
 // anchor is the 10K run (3000s); Riegel from 10K -> Marathon
 const expected = 3000 * Math.pow(42.195 / 10, 1.06);
-ok(mara!.predictedSec != null && approx(mara!.predictedSec, expected, expected * 0.001), `Riegel scales correctly (got ${mara!.predictedSec?.toFixed(0)}, exp ${expected.toFixed(0)})`);
+ok(
+  mara!.predictedSec != null && approx(mara!.predictedSec, expected, expected * 0.001),
+  `Riegel scales correctly (got ${mara!.predictedSec?.toFixed(0)}, exp ${expected.toFixed(0)})`,
+);
 
 console.log('analyze.ts (VO2max / JD / climb / streak)');
 import('../src/data/analyze.ts').then((A) => {
@@ -157,14 +164,36 @@ import('../src/data/analyze.ts').then((A) => {
   const streaks = A.computeStreaks(withRun);
   ok(streaks.longest >= 1, 'streak longest >= 1');
 
-// intensity filter relies on per-activity easy classification
-const slow = { id: 'x1', source: 'csv', date: '2024-03-02', ts: new Date('2024-03-02T08:00:00').getTime(), name: 'E', type: 'Run', distanceKm: 5, movingTimeMin: 30, avgHr: 120, hrHistogram: null } as Activity;
-const fast = { id: 'x2', source: 'csv', date: '2024-03-03', ts: new Date('2024-03-03T08:00:00').getTime(), name: 'I', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 190, hrHistogram: null } as Activity;
-ok(A.computeEasy([slow], DEFAULT_ZONES).easyCount === 1, 'slow avg HR 120 = easy');
-ok(A.computeEasy([fast], DEFAULT_ZONES).easyCount === 0, 'fast avg HR 190 = hard');
+  // intensity filter relies on per-activity easy classification
+  const slow = {
+    id: 'x1',
+    source: 'csv',
+    date: '2024-03-02',
+    ts: new Date('2024-03-02T08:00:00').getTime(),
+    name: 'E',
+    type: 'Run',
+    distanceKm: 5,
+    movingTimeMin: 30,
+    avgHr: 120,
+    hrHistogram: null,
+  } as Activity;
+  const fast = {
+    id: 'x2',
+    source: 'csv',
+    date: '2024-03-03',
+    ts: new Date('2024-03-03T08:00:00').getTime(),
+    name: 'I',
+    type: 'Run',
+    distanceKm: 5,
+    movingTimeMin: 25,
+    avgHr: 190,
+    hrHistogram: null,
+  } as Activity;
+  ok(A.computeEasy([slow], DEFAULT_ZONES).easyCount === 1, 'slow avg HR 120 = easy');
+  ok(A.computeEasy([fast], DEFAULT_ZONES).easyCount === 0, 'fast avg HR 190 = hard');
 
-// pagination: 1072 activities -> ~22 pages at 50/page
-ok(Math.ceil(1072 / 50) >= 21, 'pagination math: 1072 acts >= 21 pages @50');
+  // pagination: 1072 activities -> ~22 pages at 50/page
+  ok(Math.ceil(1072 / 50) >= 21, 'pagination math: 1072 acts >= 21 pages @50');
   console.log(`\n${passed} passed, ${failed} failed`);
   if (failed > 0) process.exit(1);
 });

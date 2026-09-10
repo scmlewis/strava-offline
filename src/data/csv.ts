@@ -35,10 +35,22 @@ function parseDate(v: string | undefined): { date: string; ts: number } | null {
   }
   // Strava format B: "Aug 19, 2026, 3:08:04 PM" (English month abbrev, 12h)
   const MON: Record<string, number> = {
-    jan: 0, feb: 1, mar: 2, apr: 3, may: 4, jun: 5, jul: 6,
-    aug: 7, sep: 8, oct: 9, nov: 10, dec: 11,
+    jan: 0,
+    feb: 1,
+    mar: 2,
+    apr: 3,
+    may: 4,
+    jun: 5,
+    jul: 6,
+    aug: 7,
+    sep: 8,
+    oct: 9,
+    nov: 10,
+    dec: 11,
   };
-  const m2 = s.match(/^([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i);
+  const m2 = s.match(
+    /^([A-Za-z]{3})[a-z]*\s+(\d{1,2}),\s*(\d{4}),\s*(\d{1,2}):(\d{2}):(\d{2})\s*(AM|PM)?/i,
+  );
   if (m2) {
     const mo = MON[m2[1].toLowerCase()];
     if (mo != null) {
@@ -84,7 +96,10 @@ const COL = {
 
 // Build a 1-bpm HR histogram by spreading avg HR across estimated sample count.
 // Without a per-second stream, this is a proxy: a flat distribution centered on avg HR.
-function proxyHistogram(avgHr: number | null, movingMin: number | null): Record<number, number> | null {
+function proxyHistogram(
+  avgHr: number | null,
+  movingMin: number | null,
+): Record<number, number> | null {
   if (avgHr == null || movingMin == null || movingMin <= 0) return null;
   const samples = Math.round(movingMin * 60); // ~1 sample/sec
   const bucket = Math.round(avgHr);

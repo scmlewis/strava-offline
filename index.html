@@ -5,9 +5,15 @@
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0c0f14" />
-    <meta name="description" content="Analyze your Strava running data offline. Local-first PWA — your data stays on your device." />
+    <meta
+      name="description"
+      content="Analyze your Strava running data offline. Local-first PWA — your data stays on your device."
+    />
     <meta property="og:title" content="Strava Offline Analyzer" />
-    <meta property="og:description" content="Analyze your Strava running data offline. Training load, HR zones, race predictions, and more." />
+    <meta
+      property="og:description"
+      content="Analyze your Strava running data offline. Training load, HR zones, race predictions, and more."
+    />
     <meta property="og:type" content="website" />
     <title>Strava Offline Analyzer</title>
   </head>
@@ -21,13 +27,37 @@
 
       <section id="dropzone" class="dropzone">
         <div class="dz-full">
-          <p id="dz-full-1">Drop your Strava <strong>activities.csv</strong> or <strong>export zip</strong> here</p>
-          <p class="hint" id="dz-full-2">(Strava → Settings → Export, you'll get a zip containing activities.csv plus a GPX for each activity)</p>
+          <p id="dz-full-1">
+            Drop your Strava <strong>activities.csv</strong> or <strong>export zip</strong> here
+          </p>
+          <p class="hint" id="dz-full-2">
+            (Strava → Settings → Export, you'll get a zip containing activities.csv plus a GPX for
+            each activity)
+          </p>
           <input id="file-input" type="file" accept=".csv,.zip" multiple hidden />
           <button id="pick-btn" type="button">Choose file</button>
         </div>
         <div class="dz-mini hidden">
-          <span><svg class="icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 12.5h-6.5L13.5 16H10.5l-2-3.5H2"/><path d="M4.5 5h15l3 7.5v5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-5z"/></svg> Drop or <button id="pick-btn-mini" type="button" class="link-btn">choose file</button> to add activities</span>
+          <span
+            ><svg
+              class="icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 12.5h-6.5L13.5 16H10.5l-2-3.5H2" />
+              <path d="M4.5 5h15l3 7.5v5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-5z" />
+            </svg>
+            Drop or
+            <button id="pick-btn-mini" type="button" class="link-btn">choose file</button> to add
+            activities</span
+          >
         </div>
       </section>
 

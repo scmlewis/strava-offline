@@ -7,7 +7,10 @@ import JSZip from 'jszip';
 
 const zipPath = process.argv[2];
 const fitName = process.argv[3] || 'activities/20895439576.fit.gz';
-if (!zipPath) { console.error('usage: node scripts/gen-fit-fixture.mjs <export.zip> [fitName]'); process.exit(1); }
+if (!zipPath) {
+  console.error('usage: node scripts/gen-fit-fixture.mjs <export.zip> [fitName]');
+  process.exit(1);
+}
 
 const zip = await JSZip.loadAsync(fs.readFileSync(zipPath));
 const gz = await zip.files[fitName].async('uint8array');

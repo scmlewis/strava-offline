@@ -17,7 +17,12 @@ self.onmessage = async (ev: MessageEvent<IngestRequest>) => {
   if (msg.type !== 'ingest') return;
   try {
     const summary = await ingestFiles(msg.files, (done, total, phase) => {
-      (self as unknown as Worker).postMessage({ type: 'progress', done, total, phase } as IngestResponse);
+      (self as unknown as Worker).postMessage({
+        type: 'progress',
+        done,
+        total,
+        phase,
+      } as IngestResponse);
     });
     (self as unknown as Worker).postMessage({ type: 'done', summary } as IngestResponse);
   } catch (e) {

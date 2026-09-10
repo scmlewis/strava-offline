@@ -34,7 +34,10 @@ let lastActs: Activity[] = [];
 const chartRO = new ResizeObserver((entries) => {
   for (const e of entries) {
     const host = e.target as HTMLElement;
-    const plot = plots.find((p) => p.root?.parentElement === host || (p as unknown as { _host?: HTMLElement })._host === host);
+    const plot = plots.find(
+      (p) =>
+        p.root?.parentElement === host || (p as unknown as { _host?: HTMLElement })._host === host,
+    );
     if (!plot) continue;
     const w = Math.max(220, Math.floor(host.clientWidth));
     if (w > 0 && w !== plot.width) plot.setSize({ width: w, height: plot.height });
@@ -111,7 +114,13 @@ function fmtTSS(tss: number | null): string {
 }
 
 // ---- shared building blocks ----
-function card(label: string, value: string, sub?: string, accent?: string, small?: boolean): string {
+function card(
+  label: string,
+  value: string,
+  sub?: string,
+  accent?: string,
+  small?: boolean,
+): string {
   const style = accent ? ` style="--card-accent:${accent}"` : '';
   return `<div class="card${small ? ' card-sm' : ''}"${style}>
     <div class="card-label">${label}</div>
@@ -212,9 +221,20 @@ function renderCards(acts: Activity[]): HTMLElement {
   const ctl = load.length ? load[load.length - 1].ctl : 0;
   const cards = [
     card(t('card_activities'), String(s.count), undefined, '#34d399'),
-    card(t('card_total_dist'), fmtDistance(s.totalDistanceKm), s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '', '#34d399'),
+    card(
+      t('card_total_dist'),
+      fmtDistance(s.totalDistanceKm),
+      s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '',
+      '#34d399',
+    ),
     card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa', true),
-    card(t('card_total_elev'), s.totalElevM ? fmtElev(s.totalElevM) : '—', undefined, '#fbbf24', true),
+    card(
+      t('card_total_elev'),
+      s.totalElevM ? fmtElev(s.totalElevM) : '—',
+      undefined,
+      '#fbbf24',
+      true,
+    ),
   ];
   if (easy.pct != null) {
     const ok = easy.pct >= goals.easyPct * 0.9;
@@ -229,16 +249,31 @@ function renderCards(acts: Activity[]): HTMLElement {
     );
   }
   if (load.length) {
-    const formLabel = tsb > 5 ? t('form_fresh') : tsb < -10 ? t('form_fatigued') : t('form_optimal');
+    const formLabel =
+      tsb > 5 ? t('form_fresh') : tsb < -10 ? t('form_fatigued') : t('form_optimal');
     const accent = tsb > 5 ? '#a78bfa' : tsb < -10 ? '#f87171' : '#34d399';
-    cards.push(card(t('card_form'), tsb.toFixed(0), `${t('card_ctl')} ${ctl.toFixed(0)} · ${formLabel}`, accent));
+    cards.push(
+      card(
+        t('card_form'),
+        tsb.toFixed(0),
+        `${t('card_ctl')} ${ctl.toFixed(0)} · ${formLabel}`,
+        accent,
+      ),
+    );
   }
   if (s.firstDate && s.lastDate) {
     const fmtShort = (d: string) => {
       const dt = new Date(d + 'T00:00:00');
       return `${dt.toLocaleString('en', { month: 'short' })} ${dt.getFullYear()}`;
     };
-    cards.push(card(t('card_date_range'), `${fmtShort(s.firstDate)} → ${fmtShort(s.lastDate)}`, undefined, '#9aa0c0'));
+    cards.push(
+      card(
+        t('card_date_range'),
+        `${fmtShort(s.firstDate)} → ${fmtShort(s.lastDate)}`,
+        undefined,
+        '#9aa0c0',
+      ),
+    );
   }
   const wrap = document.createElement('div');
   wrap.className = 'cards';
@@ -303,14 +338,19 @@ function renderHeatmap(acts: Activity[]): HTMLElement {
     if (dt < start) continue;
     const m = dt.getMonth();
     if (m !== lastMonth) {
-      months.push({ left: w * STRIDE, label: `${dt.getFullYear()} ${dt.toLocaleString('en', { month: 'short' })}` });
+      months.push({
+        left: w * STRIDE,
+        label: `${dt.getFullYear()} ${dt.toLocaleString('en', { month: 'short' })}`,
+      });
       lastMonth = m;
     }
   }
   const axis = document.createElement('div');
   axis.className = 'hm-axis';
   axis.style.width = `${weekCols * STRIDE}px`;
-  axis.innerHTML = months.map((m) => `<span class="hm-month" style="left:${m.left}px">${m.label}</span>`).join('');
+  axis.innerHTML = months
+    .map((m) => `<span class="hm-month" style="left:${m.left}px">${m.label}</span>`)
+    .join('');
 
   const wrap = document.createElement('div');
   wrap.className = 'hm-wrap';
@@ -333,13 +373,19 @@ function renderWeekly(acts: Activity[]): HTMLElement {
   const el = section(t('weekly_volume', { n: vol.length, unit: units.dist }));
   const host = document.createElement('div');
   el.appendChild(host);
-  const opts = plotOpts([{}, { label: 'km', stroke: '#34d399', width: 2, fill: 'rgba(52,211,153,0.12)' }], 210, ys);
+  const opts = plotOpts(
+    [{}, { label: 'km', stroke: '#34d399', width: 2, fill: 'rgba(52,211,153,0.12)' }],
+    210,
+    ys,
+  );
   // x-axis ticks show actual ISO week numbers
   (opts.axes![0] as uPlot.Axis).values = (_u, ts) =>
     ts.map((t) => {
       const d = new Date(t);
       const onejan = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-      const week = Math.ceil(((d.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7);
+      const week = Math.ceil(
+        ((d.getTime() - onejan.getTime()) / 86400000 + onejan.getUTCDay() + 1) / 7,
+      );
       return `${d.getUTCFullYear()}-W${String(week).padStart(2, '0')}`;
     });
   makeChart(host, opts, [xs, ys]);
@@ -382,7 +428,11 @@ function renderPace(acts: Activity[]): HTMLElement | null {
   const el = section(t('pace_trend', { unit: units.pace }));
   const host = document.createElement('div');
   el.appendChild(host);
-  makeChart(host, plotOpts([{ label: 'date' }, { label: 'pace', stroke: '#fbbf24', width: 2 }], 210, ys), [xs, ys]);
+  makeChart(
+    host,
+    plotOpts([{ label: 'date' }, { label: 'pace', stroke: '#fbbf24', width: 2 }], 210, ys),
+    [xs, ys],
+  );
   return el;
 }
 
@@ -394,10 +444,11 @@ function renderZones(acts: Activity[]): HTMLElement {
   const items: Array<[number, number]> = [];
   if (dist.basis === 'histogram') {
     const total = Object.values(dist.byTime).reduce((s, v) => s + v, 0);
-    for (let z = 1; z <= 5; z++) items.push([z, total ? (dist.byTime[z] || 0) / total * 100 : 0]);
+    for (let z = 1; z <= 5; z++) items.push([z, total ? ((dist.byTime[z] || 0) / total) * 100 : 0]);
   } else {
     const total = Object.values(dist.byActivity).reduce((s, v) => s + v, 0);
-    for (let z = 1; z <= 5; z++) items.push([z, total ? (dist.byActivity[z] || 0) / total * 100 : 0]);
+    for (let z = 1; z <= 5; z++)
+      items.push([z, total ? ((dist.byActivity[z] || 0) / total) * 100 : 0]);
   }
   for (const [z, pct] of items) {
     const cfg = currentCfg.zones[z - 1];
@@ -441,7 +492,10 @@ function renderPRs(acts: Activity[]): HTMLElement {
   const prs = computePRs(acts);
   const el = section(t('personal_records'));
   const rows = prs
-    .map((p) => `<tr><td>${esc(p.label)}</td><td>${p.bestSec != null ? fmtPaceMin(p.bestSec) : '—'}</td><td>${esc(p.date || '—')}</td></tr>`)
+    .map(
+      (p) =>
+        `<tr><td>${esc(p.label)}</td><td>${p.bestSec != null ? fmtPaceMin(p.bestSec) : '—'}</td><td>${esc(p.date || '—')}</td></tr>`,
+    )
     .join('');
   el.innerHTML += `<div class="table-scroll"><table class="act-table">
     <thead><tr><th>${t('col_distance')}</th><th>${t('col_best_time')}</th><th>${t('col_date')}</th></tr></thead>
@@ -453,7 +507,10 @@ function renderRiegel(acts: Activity[]): HTMLElement {
   const preds = computeRiegel(acts, goals.riegelExp);
   const el = section(t('race_predictions'));
   const rows = preds
-    .map((p) => `<tr><td>${esc(p.label)}</td><td>${p.predictedSec != null ? fmtPaceMin(p.predictedSec) : '—'}</td><td>${esc(p.anchorLabel || '—')}</td></tr>`)
+    .map(
+      (p) =>
+        `<tr><td>${esc(p.label)}</td><td>${p.predictedSec != null ? fmtPaceMin(p.predictedSec) : '—'}</td><td>${esc(p.anchorLabel || '—')}</td></tr>`,
+    )
     .join('');
   el.innerHTML += `<div class="table-scroll"><table class="act-table">
     <thead><tr><th>${t('col_distance')}</th><th>${t('col_predicted')}</th><th>${t('col_anchor')}</th></tr></thead>
@@ -470,10 +527,7 @@ function renderVO2(acts: Activity[]): HTMLElement {
   }
   const paceRows = r.pacesSecPerKm
     ? (['E', 'M', 'T', 'I', 'R'] as const)
-        .map(
-          (k) =>
-            `<tr><td>${k}</td><td>${fmtPaceMin(r.pacesSecPerKm![k])} /km</td></tr>`,
-        )
+        .map((k) => `<tr><td>${k}</td><td>${fmtPaceMin(r.pacesSecPerKm![k])} /km</td></tr>`)
         .join('')
     : '';
   el.innerHTML += `
@@ -495,7 +549,10 @@ function renderClimb(acts: Activity[]): HTMLElement {
   }
   const rows = scores
     .slice(0, 12)
-    .map((s) => `<tr><td>${s.date}</td><td>${s.score}</td><td>${fmtElev(s.gainM)}</td><td>${(s.grad * 100).toFixed(1)}%</td></tr>`)
+    .map(
+      (s) =>
+        `<tr><td>${s.date}</td><td>${s.score}</td><td>${fmtElev(s.gainM)}</td><td>${(s.grad * 100).toFixed(1)}%</td></tr>`,
+    )
     .join('');
   el.innerHTML += `<div class="table-scroll climb-scroll"><table class="act-table">
     <thead><tr><th>${t('col_date')}</th><th>${t('col_score')}</th><th>${t('col_gain')}</th><th>${t('col_grade')}</th></tr></thead>
@@ -579,7 +636,10 @@ export function openActivityDetail(id: string): void {
 
   const stats: Array<[string, string]> = [
     [t('col_distance'), a.distanceKm != null ? fmtDistance(a.distanceKm) : '—'],
-    [t('col_pace'), a.distanceKm && a.movingTimeMin ? fmtPaceMin((a.movingTimeMin * 60) / a.distanceKm) : '—'],
+    [
+      t('col_pace'),
+      a.distanceKm && a.movingTimeMin ? fmtPaceMin((a.movingTimeMin * 60) / a.distanceKm) : '—',
+    ],
     [t('col_moving_time'), a.movingTimeMin != null ? fmtHours(a.movingTimeMin / 60) : '—'],
     [t('col_elevation_gain'), a.elevationGainM != null ? fmtElev(a.elevationGainM) : '—'],
     [t('col_avg_hr'), a.avgHr != null ? `${Math.round(a.avgHr)} bpm` : '—'],
@@ -588,12 +648,16 @@ export function openActivityDetail(id: string): void {
     [t('col_type'), esc(a.type || '—')],
   ];
   const statGrid = stats
-    .map(([k, v]) => `<div class="det-stat"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`)
+    .map(
+      ([k, v]) =>
+        `<div class="det-stat"><span class="det-k">${k}</span><span class="det-v">${v}</span></div>`,
+    )
     .join('');
 
-  const routeSvg = a.route && a.route.length > 1
-    ? `<div class="det-route">${buildRouteSvg(a.route)}</div>`
-    : `<p class="hint">${t('det_no_route')}</p>`;
+  const routeSvg =
+    a.route && a.route.length > 1
+      ? `<div class="det-route">${buildRouteSvg(a.route)}</div>`
+      : `<p class="hint">${t('det_no_route')}</p>`;
 
   overlay.innerHTML = `
     <div class="modal detail">
@@ -611,9 +675,13 @@ export function openActivityDetail(id: string): void {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   };
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', onKey);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
   overlay.querySelector<HTMLButtonElement>('.modal-x')!.addEventListener('click', close);
   document.body.appendChild(overlay);
 }

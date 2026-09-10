@@ -17,7 +17,10 @@ async function main() {
   assert.ok(spread > 10, `expected real HR spread (>10 bpm), got ${spread}`);
   assert.ok(stream!.route && stream!.route!.length > 10, 'should have a route polyline');
   const [lat, lon] = stream!.route![0];
-  assert.ok(lat > 20 && lat < 25 && lon > 110 && lon < 120, `route should be in HK bounds, got ${lat},${lon}`);
+  assert.ok(
+    lat > 20 && lat < 25 && lon > 110 && lon < 120,
+    `route should be in HK bounds, got ${lat},${lon}`,
+  );
   assert.ok(stream!.avgHr! > 100, 'avgHr should be plausible');
   assert.ok(stream!.maxHr! >= stream!.avgHr!, 'maxHr >= avgHr');
 
@@ -27,4 +30,7 @@ async function main() {
   console.log('FIT parse: 2 passed');
 }
 
-main().catch((e) => { console.error('FIT parse FAILED:', e); process.exit(1); });
+main().catch((e) => {
+  console.error('FIT parse FAILED:', e);
+  process.exit(1);
+});

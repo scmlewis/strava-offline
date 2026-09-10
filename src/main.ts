@@ -1,6 +1,12 @@
 import './styles.css';
 import { runIngest } from './data/ingestClient';
-import { saveActivities, loadActivities, exportBackup, importBackup, clearAllData } from './data/db';
+import {
+  saveActivities,
+  loadActivities,
+  exportBackup,
+  importBackup,
+  clearAllData,
+} from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
 import type { Activity, Units, Goals, Preferences } from './data/types';
@@ -38,8 +44,19 @@ interface Filters {
   search: string;
 }
 let filters: Filters = {
-  type: '', range: 'all', from: '', to: '', minKm: 0, maxKm: 0, minGain: 0,
-  weekday: '', intensity: '', hasRoute: null, minPace: 0, maxPace: 0, search: '',
+  type: '',
+  range: 'all',
+  from: '',
+  to: '',
+  minKm: 0,
+  maxKm: 0,
+  minGain: 0,
+  weekday: '',
+  intensity: '',
+  hasRoute: null,
+  minPace: 0,
+  maxPace: 0,
+  search: '',
 };
 const ctx: DashCtx = { tab: 'overview', sortKey: 'date', sortDir: 'desc', search: '', page: 0 };
 
@@ -48,10 +65,14 @@ function loadUnits(): Units {
   try {
     const raw = localStorage.getItem('unitPref');
     if (raw) return JSON.parse(raw);
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { dist: 'km', pace: 'min/km' };
 }
-function saveUnits() { localStorage.setItem('unitPref', JSON.stringify(units)); }
+function saveUnits() {
+  localStorage.setItem('unitPref', JSON.stringify(units));
+}
 function loadGoals(): Goals {
   try {
     const raw = localStorage.getItem('goals');
@@ -59,19 +80,27 @@ function loadGoals(): Goals {
       const parsed = JSON.parse(raw);
       return { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2, ...parsed };
     }
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 };
 }
-function saveGoals() { localStorage.setItem('goals', JSON.stringify(goals)); }
+function saveGoals() {
+  localStorage.setItem('goals', JSON.stringify(goals));
+}
 function loadPrefs(): Preferences {
   const def: Preferences = { weekStart: 'sun' };
   try {
     const raw = localStorage.getItem('prefs');
     if (raw) return { ...def, ...JSON.parse(raw) };
-  } catch { /* ignore */ }
+  } catch {
+    /* ignore */
+  }
   return def;
 }
-function savePrefs() { localStorage.setItem('prefs', JSON.stringify(prefs)); }
+function savePrefs() {
+  localStorage.setItem('prefs', JSON.stringify(prefs));
+}
 
 import { icon, type IconName } from './icons';
 
@@ -92,7 +121,9 @@ function setStatus(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
   // Auto-dismiss success/info after 3s
   if (kind !== 'err') {
     clearTimeout(statusTimer);
-    statusTimer = window.setTimeout(() => { statusEl.hidden = true; }, 3000);
+    statusTimer = window.setTimeout(() => {
+      statusEl.hidden = true;
+    }, 3000);
   }
 }
 
@@ -126,7 +157,8 @@ function matches(acts: Activity[]): Activity[] {
     }
   }
   return acts.filter((a) => {
-    if (filters.type && !(a.type || '').toLowerCase().includes(filters.type.toLowerCase())) return false;
+    if (filters.type && !(a.type || '').toLowerCase().includes(filters.type.toLowerCase()))
+      return false;
     if (days !== Infinity && a.ts && (now - a.ts) / 86400000 > days) return false;
     if (a.ts && a.ts < fromT) return false;
     if (a.ts && a.ts > toT) return false;
@@ -279,7 +311,12 @@ function buildToolbar() {
   const bind = (id: string, fn: (v: string) => void) => {
     const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
     if (!el) return;
-    const ev = el instanceof HTMLInputElement && el.type === 'number' ? 'change' : el instanceof HTMLSelectElement ? 'change' : 'input';
+    const ev =
+      el instanceof HTMLInputElement && el.type === 'number'
+        ? 'change'
+        : el instanceof HTMLSelectElement
+          ? 'change'
+          : 'input';
     el.addEventListener(ev, () => fn(el.value));
   };
 
@@ -293,18 +330,54 @@ function buildToolbar() {
       refresh();
     }, 180);
   });
-  bind('t-type', (v) => { filters.type = v; refresh(); });
-  bind('t-range', (v) => { filters.range = v; refresh(); });
-  bind('t-weekday', (v) => { filters.weekday = v; refresh(); });
-  bind('t-intensity', (v) => { filters.intensity = v; refresh(); });
-  bind('t-route', (v) => { filters.hasRoute = v === '' ? null : v === 'yes'; refresh(); });
-  bind('t-minkm', (v) => { filters.minKm = Number(v) || 0; refresh(); });
-  bind('t-maxkm', (v) => { filters.maxKm = Number(v) || 0; refresh(); });
-  bind('t-mingain', (v) => { filters.minGain = Number(v) || 0; refresh(); });
-  bind('t-minpace', (v) => { filters.minPace = Number(v) || 0; refresh(); });
-  bind('t-maxpace', (v) => { filters.maxPace = Number(v) || 0; refresh(); });
-  bind('t-from', (v) => { filters.from = v; refresh(); });
-  bind('t-to', (v) => { filters.to = v; refresh(); });
+  bind('t-type', (v) => {
+    filters.type = v;
+    refresh();
+  });
+  bind('t-range', (v) => {
+    filters.range = v;
+    refresh();
+  });
+  bind('t-weekday', (v) => {
+    filters.weekday = v;
+    refresh();
+  });
+  bind('t-intensity', (v) => {
+    filters.intensity = v;
+    refresh();
+  });
+  bind('t-route', (v) => {
+    filters.hasRoute = v === '' ? null : v === 'yes';
+    refresh();
+  });
+  bind('t-minkm', (v) => {
+    filters.minKm = Number(v) || 0;
+    refresh();
+  });
+  bind('t-maxkm', (v) => {
+    filters.maxKm = Number(v) || 0;
+    refresh();
+  });
+  bind('t-mingain', (v) => {
+    filters.minGain = Number(v) || 0;
+    refresh();
+  });
+  bind('t-minpace', (v) => {
+    filters.minPace = Number(v) || 0;
+    refresh();
+  });
+  bind('t-maxpace', (v) => {
+    filters.maxPace = Number(v) || 0;
+    refresh();
+  });
+  bind('t-from', (v) => {
+    filters.from = v;
+    refresh();
+  });
+  bind('t-to', (v) => {
+    filters.to = v;
+    refresh();
+  });
   (document.getElementById('t-unit') as HTMLSelectElement).addEventListener('change', (e) => {
     const v = (e.target as HTMLSelectElement).value as 'km' | 'mi';
     units = { dist: v, pace: v === 'mi' ? 'min/mi' : 'min/km' };
@@ -325,7 +398,8 @@ function buildToolbar() {
       if (body) body.classList.toggle('collapsed', !collapsed);
       localStorage.setItem('filterCollapsed', !collapsed ? '1' : '0');
       const caret = toggle.querySelector('.caret');
-      if (caret) caret.innerHTML = !collapsed ? icon('chevron-right', 14) : icon('chevron-down', 14);
+      if (caret)
+        caret.innerHTML = !collapsed ? icon('chevron-right', 14) : icon('chevron-down', 14);
     });
   }
   const resetHead = document.getElementById('btn-reset-head');
@@ -341,7 +415,21 @@ function buildToolbar() {
 }
 
 function resetFilters() {
-  filters = { type: '', range: 'all', from: '', to: '', minKm: 0, maxKm: 0, minGain: 0, weekday: '', intensity: '', hasRoute: null, minPace: 0, maxPace: 0, search: '' };
+  filters = {
+    type: '',
+    range: 'all',
+    from: '',
+    to: '',
+    minKm: 0,
+    maxKm: 0,
+    minGain: 0,
+    weekday: '',
+    intensity: '',
+    hasRoute: null,
+    minPace: 0,
+    maxPace: 0,
+    search: '',
+  };
   buildToolbar();
   refresh();
 }
@@ -376,7 +464,9 @@ function onDiagnostics() {
         distanceKm: allActs[0].distanceKm,
       }
     : null;
-  const firstRuns = runs.slice(0, 5).map((a) => ({ type: a.type, date: a.date, distanceKm: a.distanceKm }));
+  const firstRuns = runs
+    .slice(0, 5)
+    .map((a) => ({ type: a.type, date: a.date, distanceKm: a.distanceKm }));
   const diag = {
     totalActivities: allActs.length,
     activitiesWithDistance: withDist.length,
@@ -428,10 +518,13 @@ function onRestore() {
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
       // map known validation messages to friendly i18n strings
-      const key =
-        msg.includes('unsupported version') ? 'restore_bad_version'
-        : msg.includes('missing activities') || msg.includes('not a JSON') || msg.includes('missing its id') ? 'restore_bad_shape'
-        : null;
+      const key = msg.includes('unsupported version')
+        ? 'restore_bad_version'
+        : msg.includes('missing activities') ||
+            msg.includes('not a JSON') ||
+            msg.includes('missing its id')
+          ? 'restore_bad_shape'
+          : null;
       setStatus(key ? t(key) : t('restore_fail', { e: msg }), 'err');
     }
   });
@@ -468,10 +561,14 @@ function openClearData() {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   };
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', onKey);
   document.getElementById('clear-cancel')!.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
   document.getElementById('clear-backup')!.addEventListener('click', async () => {
     await onBackup();
     await clearAllData();
@@ -515,10 +612,14 @@ function openZoneSettings() {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   };
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', onKey);
   document.getElementById('z-close')!.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
   document.getElementById('z-reset')!.addEventListener('click', () => {
     cfg = JSON.parse(JSON.stringify(DEFAULT_ZONES));
     saveZones(cfg);
@@ -533,7 +634,8 @@ function openZoneSettings() {
     const fthr = fthrRaw ? Number(fthrRaw) : undefined;
     const ctlTau = Number((document.getElementById('z-ctltau') as HTMLInputElement).value) || 42;
     const atlTau = Number((document.getElementById('z-atltau') as HTMLInputElement).value) || 7;
-    const tssFactor = Number((document.getElementById('z-tssfactor') as HTMLInputElement).value) || 2.06;
+    const tssFactor =
+      Number((document.getElementById('z-tssfactor') as HTMLInputElement).value) || 2.06;
     const zones = cfg.zones.map((zn, i) => ({
       name: (document.getElementById(`z-name${i}`) as HTMLInputElement).value || zn.name,
       lo: zn.lo,
@@ -570,10 +672,14 @@ function openGoals() {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   };
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', onKey);
   document.getElementById('g-close')!.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
   document.getElementById('g-save')!.addEventListener('click', () => {
     const wk = (document.getElementById('g-wk') as HTMLInputElement).value;
     goals = {
@@ -608,7 +714,10 @@ async function handleFiles(files: File[] | FileList) {
     setDropzoneCompact(true);
     refresh();
     if (summary.issues.length) {
-      console.warn(`Strava Offline: skipped ${summary.issues.length} file(s) during import:`, summary.issues);
+      console.warn(
+        `Strava Offline: skipped ${summary.issues.length} file(s) during import:`,
+        summary.issues,
+      );
       setStatus(t('st_imported_skip', { n: acts.length, skipped: summary.issues.length }), 'ok');
     } else {
       setStatus(t('st_imported', { n: acts.length }), 'ok');
@@ -652,10 +761,14 @@ function openAbout() {
     overlay.remove();
     document.removeEventListener('keydown', onKey);
   };
-  const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') close(); };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
   document.addEventListener('keydown', onKey);
   document.getElementById('about-close')!.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
 }
 
 // ---- drag & drop (compact when data present, expands on any document drag) ----

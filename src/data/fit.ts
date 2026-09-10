@@ -17,7 +17,9 @@ export interface FitStream {
 }
 
 function decimate(pts: TrackPoint[], max = 120): [number, number][] {
-  const valid = pts.filter((p) => p.lat != null && p.lon != null).map((p) => [p.lat!, p.lon!] as [number, number]);
+  const valid = pts
+    .filter((p) => p.lat != null && p.lon != null)
+    .map((p) => [p.lat!, p.lon!] as [number, number]);
   if (valid.length <= max) return valid;
   const step = Math.ceil(valid.length / max);
   const out: [number, number][] = [];
@@ -56,8 +58,16 @@ export async function parseFitGz(gzBytes: Uint8Array): Promise<FitStream | null>
     // semicircles (magnitude ~1e7) by converting only when out of range.
     const rawLat = r.position_lat != null ? Number(r.position_lat) : NaN;
     const rawLon = r.position_long != null ? Number(r.position_long) : NaN;
-    const lat = !isNaN(rawLat) ? (Math.abs(rawLat) > 180 ? rawLat / SEMICIRCLE_TO_DEG : rawLat) : undefined;
-    const lon = !isNaN(rawLon) ? (Math.abs(rawLon) > 180 ? rawLon / SEMICIRCLE_TO_DEG : rawLon) : undefined;
+    const lat = !isNaN(rawLat)
+      ? Math.abs(rawLat) > 180
+        ? rawLat / SEMICIRCLE_TO_DEG
+        : rawLat
+      : undefined;
+    const lon = !isNaN(rawLon)
+      ? Math.abs(rawLon) > 180
+        ? rawLon / SEMICIRCLE_TO_DEG
+        : rawLon
+      : undefined;
     const t = r.timestamp ? new Date(r.timestamp).getTime() : NaN;
     if (hr != null) hrs.push(hr);
     points.push({
@@ -75,7 +85,10 @@ export async function parseFitGz(gzBytes: Uint8Array): Promise<FitStream | null>
     hist[b] = (hist[b] || 0) + 1;
   }
 
-  const times = points.map((p) => p.t).filter((t) => t > 0).sort((a, b) => a - b);
+  const times = points
+    .map((p) => p.t)
+    .filter((t) => t > 0)
+    .sort((a, b) => a - b);
   const startMs = times.length ? times[0] : 0;
   const endMs = times.length ? times[times.length - 1] : 0;
   const movingTimeMin = startMs && endMs && endMs > startMs ? (endMs - startMs) / 60000 : null;

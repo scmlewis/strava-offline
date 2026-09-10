@@ -25,7 +25,8 @@ function findHr(pt: Element): number | undefined {
 }
 
 function decimate(pts: TrackPoint[], max = 120): [number, number][] {
-  if (pts.length <= max) return pts.filter((p) => p.lat != null && p.lon != null).map((p) => [p.lat!, p.lon!]);
+  if (pts.length <= max)
+    return pts.filter((p) => p.lat != null && p.lon != null).map((p) => [p.lat!, p.lon!]);
   const step = Math.ceil(pts.length / max);
   const out: [number, number][] = [];
   for (let i = 0; i < pts.length; i += step) {
@@ -35,7 +36,10 @@ function decimate(pts: TrackPoint[], max = 120): [number, number][] {
   return out;
 }
 
-export function parseGpx(xml: string, id: string): { activity: Activity; points: TrackPoint[] } | null {
+export function parseGpx(
+  xml: string,
+  id: string,
+): { activity: Activity; points: TrackPoint[] } | null {
   const doc = new DOMParser().parseFromString(xml, 'application/xml');
   // getElementsByTagName works in browser + xmldom polyfill (querySelector is not universal)
   if (doc.getElementsByTagName('parsererror').length) return null;
@@ -60,7 +64,10 @@ export function parseGpx(xml: string, id: string): { activity: Activity; points:
     });
   }
 
-  const times = points.map((p) => p.t).filter((t) => t > 0).sort((a, b) => a - b);
+  const times = points
+    .map((p) => p.t)
+    .filter((t) => t > 0)
+    .sort((a, b) => a - b);
   const firstT = times[0];
   const lastT = times[times.length - 1];
   const hrs = points.map((p) => p.hr).filter((h): h is number => h != null);

@@ -2,20 +2,34 @@
 // realistic inputs (real GPX with per-point HR, multi-distance races) so we
 // can confirm the existing features actually produce correct numbers.
 import { DOMParser as XDOMParser } from '@xmldom/xmldom';
-(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser = XDOMParser as unknown as typeof DOMParser;
+(globalThis as unknown as { DOMParser: typeof XDOMParser }).DOMParser =
+  XDOMParser as unknown as typeof DOMParser;
 
 import { DEFAULT_ZONES } from '../src/data/zones.ts';
 import { parseGpx } from '../src/data/gpx.ts';
-import { computePRs, computeRiegel, computeVO2max, computeClimbScore, computeStreaks } from '../src/data/analyze.ts';
+import {
+  computePRs,
+  computeRiegel,
+  computeVO2max,
+  computeClimbScore,
+  computeStreaks,
+} from '../src/data/analyze.ts';
 import type { Activity } from '../src/data/types.ts';
 
 let passed = 0;
 let failed = 0;
 function ok(cond: boolean, msg: string) {
-  if (cond) { passed++; console.log('  ✓ ' + msg); }
-  else { failed++; console.error('  ✗ ' + msg); }
+  if (cond) {
+    passed++;
+    console.log('  ✓ ' + msg);
+  } else {
+    failed++;
+    console.error('  ✗ ' + msg);
+  }
 }
-function approx(a: number, b: number, eps = 0.01) { return Math.abs(a - b) <= eps; }
+function approx(a: number, b: number, eps = 0.01) {
+  return Math.abs(a - b) <= eps;
+}
 
 // A realistic GPX: 40 trackpoints each at a fixed HR, spaced 30s apart
 // (so each contributes 1 sample-second of HR). HRs chosen to land in Z1/Z2/Z3/Z5.
@@ -72,13 +86,17 @@ ok(gpxAct.hrHistogram![195] === 4, '4 samples @ HR195');
 ok(gpxAct.route != null && gpxAct.route.length > 0, 'route decimated points stored');
 
 console.log('zone distribution from real GPX histogram');
-const { computeZoneDistribution, secondsInZone, histogramSeconds } = await import('../src/data/analyze.ts');
+const { computeZoneDistribution, secondsInZone, histogramSeconds } =
+  await import('../src/data/analyze.ts');
 const zd = computeZoneDistribution([gpxAct], DEFAULT_ZONES);
 ok(zd.basis === 'histogram', 'histogram basis');
 ok(secondsInZone(gpxAct.hrHistogram, 1, DEFAULT_ZONES) === 10, 'Z1 = 10s (HR120)');
 ok(secondsInZone(gpxAct.hrHistogram, 2, DEFAULT_ZONES) === 20, 'Z2 = 20s (HR148)');
 ok(secondsInZone(gpxAct.hrHistogram, 3, DEFAULT_ZONES) === 6, 'Z3 = 6s (HR170)');
-ok(secondsInZone(gpxAct.hrHistogram, 4, DEFAULT_ZONES) === 4, 'Z4 = 4s (HR195 — per current zones Z5 starts at 0.95*206=195.7)');
+ok(
+  secondsInZone(gpxAct.hrHistogram, 4, DEFAULT_ZONES) === 4,
+  'Z4 = 4s (HR195 — per current zones Z5 starts at 0.95*206=195.7)',
+);
 ok(histogramSeconds(gpxAct.hrHistogram) === 40, 'total 40s');
 // easy = time in Z1+Z2 >= 50% of total -> (10+20)/40 = 75% -> easy
 const { computeEasy } = await import('../src/data/analyze.ts');
@@ -89,7 +107,18 @@ ok(ez.basis === 'histogram', 'easy basis = histogram');
 console.log('PR + Riegel with realistic multi-distance races');
 // Realistic races: 5K @ 21:00 (1260s), 10K @ 44:00 (2640s), Half @ 1:40:00 (6000s)
 const race = (id: string, type: string, km: number, sec: number, date: string): Activity =>
-  ({ id, source: 'csv', date, ts: Date.parse(date + 'T08:00:00'), name: type, type, distanceKm: km, movingTimeMin: sec / 60, avgHr: 160, hrHistogram: null } as Activity);
+  ({
+    id,
+    source: 'csv',
+    date,
+    ts: Date.parse(date + 'T08:00:00'),
+    name: type,
+    type,
+    distanceKm: km,
+    movingTimeMin: sec / 60,
+    avgHr: 160,
+    hrHistogram: null,
+  }) as Activity;
 const races = [
   race('r1', 'Run', 5, 1260, '2024-01-10'),
   race('r2', 'Run', 10, 2640, '2024-02-10'),
@@ -107,7 +136,10 @@ ok(pHalf.bestSec === 6000, 'Half PR = 1:40:00');
 const riegel = computeRiegel(races);
 const mara = riegel.find((r) => r.label === 'Marathon')!;
 const expMara = 2640 * Math.pow(42.195 / 10, 1.06);
-ok(mara.predictedSec != null && approx(mara.predictedSec, expMara, expMara * 0.001), `Marathon Riegel from 10K anchor (got ${mara.predictedSec?.toFixed(0)}, exp ${expMara.toFixed(0)})`);
+ok(
+  mara.predictedSec != null && approx(mara.predictedSec, expMara, expMara * 0.001),
+  `Marathon Riegel from 10K anchor (got ${mara.predictedSec?.toFixed(0)}, exp ${expMara.toFixed(0)})`,
+);
 ok(mara.anchorLabel === '10K', 'anchor = 10K (preferred)');
 // sanity: predicted marathon should be slower than predicted Half (longer distance)
 const halfPred = riegel.find((r) => r.label === 'Half')!.predictedSec!;
@@ -131,8 +163,32 @@ if (vd.pacesSecPerKm) {
 
 console.log('Climb Score formula check');
 const climbActs: Activity[] = [
-  { id: 'c1', source: 'csv', date: '2024-04-01', ts: Date.parse('2024-04-01T08:00:00'), name: 'Hill', type: 'Run', distanceKm: 10, movingTimeMin: 60, avgHr: 150, hrHistogram: null, elevationGainM: 500 } as Activity,
-  { id: 'c2', source: 'csv', date: '2024-04-02', ts: Date.parse('2024-04-02T08:00:00'), name: 'Flat', type: 'Run', distanceKm: 10, movingTimeMin: 50, avgHr: 150, hrHistogram: null, elevationGainM: 50 } as Activity,
+  {
+    id: 'c1',
+    source: 'csv',
+    date: '2024-04-01',
+    ts: Date.parse('2024-04-01T08:00:00'),
+    name: 'Hill',
+    type: 'Run',
+    distanceKm: 10,
+    movingTimeMin: 60,
+    avgHr: 150,
+    hrHistogram: null,
+    elevationGainM: 500,
+  } as Activity,
+  {
+    id: 'c2',
+    source: 'csv',
+    date: '2024-04-02',
+    ts: Date.parse('2024-04-02T08:00:00'),
+    name: 'Flat',
+    type: 'Run',
+    distanceKm: 10,
+    movingTimeMin: 50,
+    avgHr: 150,
+    hrHistogram: null,
+    elevationGainM: 50,
+  } as Activity,
 ];
 const climb = computeClimbScore(climbActs);
 ok(climb.length === 2, 'climb score for 2 activities');
@@ -146,7 +202,18 @@ const streakActs: Activity[] = [];
 // 5 consecutive days 2024-05-01..05-05, then gap, then 2024-05-10 (single, not today)
 const dates = ['2024-05-01', '2024-05-02', '2024-05-03', '2024-05-04', '2024-05-05', '2024-05-10'];
 dates.forEach((d, i) =>
-  streakActs.push({ id: 's' + i, source: 'csv', date: d, ts: Date.parse(d + 'T08:00:00'), name: 'Run', type: 'Run', distanceKm: 5, movingTimeMin: 25, avgHr: 140, hrHistogram: null } as Activity),
+  streakActs.push({
+    id: 's' + i,
+    source: 'csv',
+    date: d,
+    ts: Date.parse(d + 'T08:00:00'),
+    name: 'Run',
+    type: 'Run',
+    distanceKm: 5,
+    movingTimeMin: 25,
+    avgHr: 140,
+    hrHistogram: null,
+  } as Activity),
 );
 const st = computeStreaks(streakActs);
 ok(st.longest === 5, `longest streak = 5 (got ${st.longest})`);
@@ -163,7 +230,9 @@ const gpxPts = [];
 for (let i = 0; i < 12; i++) {
   const hr = i < 4 ? 140 : 175; // 4 easy (Z2), 8 hard (Z3/4) -> clearly hard
   const t = new Date(Date.parse('2024-06-01T00:00:00Z') + i * 30000).toISOString();
-  gpxPts.push(`      <trkpt lat="${(22.3 + i * 0.001).toFixed(4)}" lon="${(114.1 + i * 0.001).toFixed(4)}"><ele>10</ele><time>${t}</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${hr}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`);
+  gpxPts.push(
+    `      <trkpt lat="${(22.3 + i * 0.001).toFixed(4)}" lon="${(114.1 + i * 0.001).toFixed(4)}"><ele>10</ele><time>${t}</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>${hr}</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>`,
+  );
 }
 const GPX = `<?xml version="1.0" encoding="UTF-8"?>
 <gpx xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
@@ -178,8 +247,12 @@ const zipBuf = await zip.generateAsync({ type: 'uint8array' });
 // mock File (node has no DOM File with .arrayBuffer returning these); provide name + accessors
 const mockZip = {
   name: 'strava-export.zip',
-  async arrayBuffer() { return zipBuf.buffer.slice(zipBuf.byteOffset, zipBuf.byteOffset + zipBuf.byteLength); },
-  async text() { return ''; },
+  async arrayBuffer() {
+    return zipBuf.buffer.slice(zipBuf.byteOffset, zipBuf.byteOffset + zipBuf.byteLength);
+  },
+  async text() {
+    return '';
+  },
 } as unknown as File;
 const merged = await ingestFiles([mockZip]);
 ok(merged.activities.length === 1, 'zip ingest produced 1 activity');

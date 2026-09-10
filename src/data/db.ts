@@ -24,7 +24,13 @@ export async function clearActivities(): Promise<void> {
   await db.activities.clear();
 }
 
-const SETTINGS_KEYS = ['strava-offline:zones', 'goals', 'unitPref', 'filterCollapsed', 'prefs'] as const;
+const SETTINGS_KEYS = [
+  'strava-offline:zones',
+  'goals',
+  'unitPref',
+  'filterCollapsed',
+  'prefs',
+] as const;
 
 /** Remove all activities from IndexedDB and all settings from localStorage. */
 export async function clearAllData(): Promise<void> {
@@ -71,7 +77,12 @@ export async function exportBackup(): Promise<BackupBundle> {
     version: 1,
     exportedAt: new Date().toISOString(),
     zones: readJson<ZonesConfig>(ZONES_KEY) ?? DEFAULT_ZONES,
-    goals: readJson<Goals>(GOALS_KEY) ?? { weeklyKm: null, easyPct: 80, riegelExp: 1.06, easyZones: 2 },
+    goals: readJson<Goals>(GOALS_KEY) ?? {
+      weeklyKm: null,
+      easyPct: 80,
+      riegelExp: 1.06,
+      easyZones: 2,
+    },
     units: readJson<Units>(UNITS_KEY) ?? { dist: 'km', pace: 'min/km' },
     prefs: readJson<Preferences>(PREFS_KEY) ?? { weekStart: 'sun' },
     activities,

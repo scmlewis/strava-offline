@@ -22,7 +22,11 @@ export function histogramSeconds(hist: Record<number, number> | null | undefined
 }
 
 /** seconds spent at or below a given zone (1..5). Needs config to assign bpm->zone. */
-export function secondsInZone(hist: Record<number, number> | null | undefined, zone: number, cfg: ZonesConfig): number {
+export function secondsInZone(
+  hist: Record<number, number> | null | undefined,
+  zone: number,
+  cfg: ZonesConfig,
+): number {
   if (!hist) return 0;
   let sec = 0;
   for (const [bp, count] of Object.entries(hist)) {
@@ -33,7 +37,10 @@ export function secondsInZone(hist: Record<number, number> | null | undefined, z
 }
 
 /** average intensity factor across the histogram (HRR if fthr, else HRmax%) */
-export function avgIntensity(hist: Record<number, number> | null | undefined, cfg: ZonesConfig): number | null {
+export function avgIntensity(
+  hist: Record<number, number> | null | undefined,
+  cfg: ZonesConfig,
+): number | null {
   if (!hist) return null;
   let total = 0;
   let acc = 0;
@@ -138,7 +145,12 @@ const PR_DISTANCES: Array<{ km: number; label: string }> = [
  */
 export function computePRs(acts: Activity[]): PR[] {
   const runs = acts.filter(
-    (a) => a.distanceKm && a.distanceKm > 0 && a.movingTimeMin && a.movingTimeMin > 0 && /run/i.test(a.type || ''),
+    (a) =>
+      a.distanceKm &&
+      a.distanceKm > 0 &&
+      a.movingTimeMin &&
+      a.movingTimeMin > 0 &&
+      /run/i.test(a.type || ''),
   );
   return PR_DISTANCES.map(({ km, label }) => {
     let best: { sec: number; id: string; date: string; d: number } | null = null;
@@ -184,7 +196,12 @@ export function computeRiegel(acts: Activity[], riegelExp = 1.06): RacePredictio
   const prs = computePRs(acts);
   const anchors = prs.filter((p) => p.bestSec != null);
   if (anchors.length === 0) {
-    return RACE_DISTANCES.map((r) => ({ label: r.label, distanceKm: r.km, predictedSec: null, anchorLabel: null }));
+    return RACE_DISTANCES.map((r) => ({
+      label: r.label,
+      distanceKm: r.km,
+      predictedSec: null,
+      anchorLabel: null,
+    }));
   }
   // pick the anchor with the most representative distance (prefer 10K if present, else middle)
   const anchor = anchors.find((a) => a.label === '10K') || anchors[Math.floor(anchors.length / 2)];
@@ -193,7 +210,12 @@ export function computeRiegel(acts: Activity[], riegelExp = 1.06): RacePredictio
 
   return RACE_DISTANCES.map((r) => {
     if (r.km === anchorKm) {
-      return { label: r.label, distanceKm: r.km, predictedSec: anchorSec, anchorLabel: anchor.label };
+      return {
+        label: r.label,
+        distanceKm: r.km,
+        predictedSec: anchorSec,
+        anchorLabel: anchor.label,
+      };
     }
     const pred = anchorSec * Math.pow(r.km / anchorKm, riegelExp);
     return { label: r.label, distanceKm: r.km, predictedSec: pred, anchorLabel: anchor.label };
@@ -446,7 +468,9 @@ export function computeVO2max(acts: Activity[]): JDResult {
   return { vdot: best.vdot, anchorLabel: best.label, anchorDistKm: best.km, pacesSecPerKm: paces };
 }
 
-export function computeClimbScore(acts: Activity[]): Array<{ id: string; date: string; score: number; gainM: number; grad: number }> {
+export function computeClimbScore(
+  acts: Activity[],
+): Array<{ id: string; date: string; score: number; gainM: number; grad: number }> {
   return acts
     .filter((a) => a.elevationGainM && a.elevationGainM > 0 && a.distanceKm && a.distanceKm > 0)
     .map((a) => {
@@ -466,7 +490,12 @@ export interface StreakResult {
 }
 
 export function computeStreaks(acts: Activity[]): StreakResult {
-  const days = new Set(acts.map((a) => a.date).filter(Boolean).sort());
+  const days = new Set(
+    acts
+      .map((a) => a.date)
+      .filter(Boolean)
+      .sort(),
+  );
   if (days.size === 0) return { current: 0, longest: 0, currentEnds: null };
   const arr = [...days];
   let longest = 1;
