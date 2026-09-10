@@ -824,6 +824,23 @@ let docDragDepth = 0;
 
 onCtxChange(dashboard, refresh);
 
+// Global error boundary — show uncaught errors in the status bar
+window.addEventListener('error', (ev) => {
+  const msg = ev.message || 'Unknown error';
+  console.error('Uncaught error:', ev.error);
+  statusEl.textContent = t('error_generic', { message: msg }) || `Error: ${msg}`;
+  statusEl.className = 'status err';
+  statusEl.style.display = '';
+});
+
+window.addEventListener('unhandledrejection', (ev) => {
+  const msg = ev.reason instanceof Error ? ev.reason.message : String(ev.reason);
+  console.error('Unhandled rejection:', ev.reason);
+  statusEl.textContent = t('error_generic', { message: msg }) || `Error: ${msg}`;
+  statusEl.className = 'status err';
+  statusEl.style.display = '';
+});
+
 // ---- boot ----
 loadActivities().then((acts) => {
   if (acts.length) {

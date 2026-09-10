@@ -232,6 +232,9 @@ const EN: Dict = {
   clear_backup_first: 'Export backup first',
   clear_go: 'Clear everything',
   clear_done: 'All data cleared',
+
+  // ---- global error boundary ----
+  error_generic: 'Something went wrong: {message}',
 };
 
 export function t(key: string, params?: Record<string, string | number>): string {
