@@ -1,6 +1,5 @@
 import * as pako from 'pako';
 // fit-file-parser has no bundled types
-// @ts-ignore -- no @types/fit-file-parser available
 import FitParser from 'fit-file-parser';
 import type { TrackPoint } from './types';
 

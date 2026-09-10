@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
+    "lint": "eslint src/ test/",
     "test": "tsx test/ingest.test.ts && tsx test/fit.test.ts && tsx test/ingest-summary.test.ts && tsx test/acceptance.test.ts"
   },
   "dependencies": {
@@ -19,12 +20,15 @@
     "uplot": "^1.6.31"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/pako": "^2.0.4",
     "@types/papaparse": "^5.3.14",
     "@xmldom/xmldom": "^0.8.10",
+    "eslint": "^10.10.0",
     "jszip": "^3.10.1",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",
+    "typescript-eslint": "^8.70.0",
     "vite": "^5.4.10",
     "vite-plugin-pwa": "^0.20.5"
   }

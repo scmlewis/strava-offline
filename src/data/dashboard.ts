@@ -643,9 +643,10 @@ function renderLog(acts: Activity[], ctx: DashCtx): HTMLElement {
   const sorted = acts.slice().sort((a, b) => {
     const va = sortVal(a, ctx.sortKey);
     const vb = sortVal(b, ctx.sortKey);
-    let cmp = 0;
-    if (typeof va === 'number' && typeof vb === 'number') cmp = va - vb;
-    else cmp = String(va).localeCompare(String(vb));
+    const cmp =
+      typeof va === 'number' && typeof vb === 'number'
+        ? va - vb
+        : String(va).localeCompare(String(vb));
     return ctx.sortDir === 'asc' ? cmp : -cmp;
   });
   const head = COLS.map((c) => {
