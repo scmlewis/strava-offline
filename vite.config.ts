@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import { VitePWA } from 'vite-plugin-pwa';
+import { visualizer } from 'rollup-plugin-visualizer';
 
 export default defineConfig({
   base: './',
@@ -35,5 +36,14 @@ export default defineConfig({
         maximumFileSizeToCacheInBytes: 5 * 1024 * 1024,
       },
     }),
+    ...(process.env.ANALYZE
+      ? [
+          visualizer({
+            open: true,
+            filename: 'dist/stats.html',
+            gzipSize: true,
+          }),
+        ]
+      : []),
   ],
 });
