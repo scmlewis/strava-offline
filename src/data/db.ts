@@ -16,8 +16,29 @@ export async function saveActivities(acts: Activity[]): Promise<void> {
   await db.activities.bulkPut(acts);
 }
 
+function isValidActivity(a: unknown): a is Activity {
+  if (!a || typeof a !== 'object') return false;
+  const o = a as Record<string, unknown>;
+  return (
+    typeof o.id === 'string' &&
+    typeof o.date === 'string' &&
+    typeof o.ts === 'number' &&
+    typeof o.name === 'string' &&
+    typeof o.type === 'string'
+  );
+}
+
 export async function loadActivities(): Promise<Activity[]> {
-  return db.activities.orderBy('ts').reverse().toArray();
+  const all = await db.activities.orderBy('ts').reverse().toArray();
+  const valid: Activity[] = [];
+  for (const a of all) {
+    if (isValidActivity(a)) {
+      valid.push(a);
+    } else {
+      console.warn('Strava Offline: skipping corrupt activity entry', a);
+    }
+  }
+  return valid;
 }
 
 export async function clearActivities(): Promise<void> {
