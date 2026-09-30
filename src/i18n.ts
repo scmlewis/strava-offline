@@ -79,7 +79,6 @@ const EN: Dict = {
   bulk_title: 'Delete filtered activities',
   bulk_confirm: 'Delete these activities? Bulk delete cannot be undone.',
   bulk_go: 'Delete all shown',
-  meter_activities: 'activities',
   export_filtered: 'Export shown',
   reset_settings: 'Reset settings',
   reset_activities: 'Clear activities',

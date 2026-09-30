@@ -702,7 +702,7 @@ export function openActivityDetail(id: string): void {
     close();
     document
       .getElementById('dashboard')!
-      .dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
+      .dispatchEvent(new CustomEvent('delchange', { detail: { id }, bubbles: true }));
   });
   document.body.appendChild(overlay);
 }
@@ -759,7 +759,7 @@ function renderLog(acts: Activity[], ctx: DashCtx): HTMLElement {
     })
     .join('');
   el.innerHTML += `<div class="table-scroll"><table class="act-table">
-    <thead><tr>${head}</tr></thead>
+    <thead><tr>${head}<th aria-hidden="true"></th></tr></thead>
     <tbody>${rows}</tbody></table></div>
     <div class="pager">
       <button type="button" data-pg="prev" ${ctx.page === 0 ? 'disabled' : ''}>${icon('chevron-left', 14)} ${t('prev')}</button>
@@ -805,7 +805,7 @@ function renderLog(acts: Activity[], ctx: DashCtx): HTMLElement {
     btn.addEventListener('click', (ev) => {
       ev.stopPropagation();
       const id = btn.dataset.delId;
-      if (id) el.dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
+      if (id) el.dispatchEvent(new CustomEvent('delchange', { detail: { id }, bubbles: true }));
     });
   });
   return el;

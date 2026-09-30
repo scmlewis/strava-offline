@@ -242,6 +242,30 @@ function isEasy(a: Activity): boolean {
 function refresh() {
   setCtx(cfg, units, goals, prefs);
   renderDashboard(dashboard, matches(allActs), ctx);
+  updateMeter();
+}
+
+function updateMeter() {
+  const matched = matches(allActs);
+  const el = toolbar.querySelector('.tb-meter');
+  if (el) el.textContent = formatStorageMeter(matched.length, null, computeTypeBreakdown(matched));
+  if (navigator.storage?.estimate) {
+    navigator.storage
+      .estimate()
+      .then((est) => {
+        const meter = toolbar.querySelector('.tb-meter');
+        if (meter && typeof est.usage === 'number') {
+          meter.textContent = formatStorageMeter(
+            matched.length,
+            est.usage,
+            computeTypeBreakdown(matched),
+          );
+        }
+      })
+      .catch(() => {
+        /* keep counts-only meter */
+      });
+  }
 }
 
 // ---- nav (tabs) ----
@@ -356,23 +380,7 @@ function buildToolbar() {
       <button id="btn-about" type="button" class="ico-btn" title="${t('about')}">${icon('info')}</button>
     </div>`;
 
-  if (navigator.storage?.estimate) {
-    navigator.storage
-      .estimate()
-      .then((est) => {
-        const el = toolbar.querySelector('.tb-meter');
-        if (el && typeof est.usage === 'number') {
-          el.textContent = formatStorageMeter(
-            matched.length,
-            est.usage,
-            computeTypeBreakdown(matched),
-          );
-        }
-      })
-      .catch(() => {
-        /* keep counts-only meter */
-      });
-  }
+  updateMeter();
 
   const bind = (id: string, fn: (v: string) => void) => {
     const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
@@ -483,7 +491,9 @@ function buildToolbar() {
     const subset = matches(allActs);
     if (!subset.length) return;
     const bundle = buildFilteredBundle(await exportBackup(), subset);
-    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const json = JSON.stringify(bundle, null, 2);
+    if (!(await confirmLargeExport(json))) return;
+    const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -572,17 +582,22 @@ function onDiagnostics() {
 }
 
 // ---- backup / restore ----
-async function onBackup() {
-  const bundle = await exportBackup();
-  const json = JSON.stringify(bundle, null, 2);
+async function confirmLargeExport(json: string): Promise<boolean> {
   const sizeMB = new Blob([json]).size / (1024 * 1024);
   if (sizeMB > 50) {
     const proceed = window.confirm(
       t('backup_large', { size: sizeMB.toFixed(1) }) ||
         `Backup is ${sizeMB.toFixed(1)} MB. This may take a while to download and restore. Continue?`,
     );
-    if (!proceed) return;
+    if (!proceed) return false;
   }
+  return true;
+}
+
+async function onBackup() {
+  const bundle = await exportBackup();
+  const json = JSON.stringify(bundle, null, 2);
+  if (!(await confirmLargeExport(json))) return;
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
@@ -1003,22 +1018,57 @@ let undoTimer = 0;
 async function deleteSingleActivity(id: string) {
   const target = allActs.find((a) => a.id === id);
   if (!target) return;
-  if (!window.confirm(`${t('del_confirm')}\n${target.name} · ${target.date}`)) return;
-  lastDeleted = { ...target };
-  window.clearTimeout(undoTimer);
-  try {
-    await deleteActivity(id);
-    allActs = await loadActivities();
-    buildToolbar();
-    refresh();
-    showToast(t('del_undo'), 'info', 8000);
-    undoTimer = window.setTimeout(() => {
+  openDeleteConfirm(target, async () => {
+    lastDeleted = { ...target };
+    window.clearTimeout(undoTimer);
+    try {
+      await deleteActivity(id);
+      allActs = await loadActivities();
+      if (allActs.length === 0) setDropzoneCompact(false);
+      buildToolbar();
+      refresh();
+      showToast(t('del_undo'), 'info', 8000);
+      undoTimer = window.setTimeout(() => {
+        lastDeleted = null;
+      }, 8000);
+    } catch (e) {
       lastDeleted = null;
-    }, 8000);
-  } catch (e) {
-    lastDeleted = null;
-    showToast(t('restore_fail', { e: e instanceof Error ? e.message : String(e) }), 'error');
-  }
+      showToast(t('restore_fail', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
+  });
+}
+
+function openDeleteConfirm(target: Activity, onConfirm: () => void) {
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${esc(t('del_activity'))}</h3>
+      <p>${esc(t('del_confirm'))}</p>
+      <p class="hint">${esc(target.name || '—')} · ${esc(target.date)}</p>
+      <div class="modal-actions">
+        <button id="del-cancel" type="button">${t('zones_cancel')}</button>
+        <button id="del-go" type="button" class="danger">${t('del_go')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+  document.addEventListener('keydown', onKey);
+  document.getElementById('del-cancel')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.getElementById('del-go')!.addEventListener('click', () => {
+    close();
+    onConfirm();
+  });
+  document.getElementById('del-cancel')!.focus();
 }
 
 dashboard.addEventListener('delchange', (e) => {
@@ -1085,6 +1135,7 @@ document.addEventListener('keydown', (ev) => {
         allActs = acts;
         buildToolbar();
         refresh();
+        showToast(t('st_imported', { n: 1 }), 'success');
       });
     });
   }
@@ -1100,6 +1151,7 @@ function openShortcutsOverlay() {
         <kbd>?</kbd><span>${esc(t('shortcuts_help'))}</span>
         <kbd>1</kbd>-<kbd>${TABS.length}</kbd><span>${esc(t('shortcuts_tabs'))}</span>
         <kbd>/</kbd><span>${esc(t('shortcuts_search'))}</span>
+        <kbd>U</kbd><span>${esc(t('del_undo'))}</span>
         <kbd>Esc</kbd><span>${esc(t('shortcuts_close'))}</span>
       </div>
       <button class="btn" style="margin-top:16px" id="close-shortcuts">${esc(t('close'))}</button>
