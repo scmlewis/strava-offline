@@ -61,6 +61,56 @@ export async function clearAllData(): Promise<void> {
   }
 }
 
+export async function deleteActivity(id: string): Promise<void> {
+  await db.activities.delete(id);
+}
+
+export async function bulkDeleteActivities(ids: string[]): Promise<void> {
+  if (!ids.length) return;
+  await db.activities.bulkDelete(ids);
+}
+
+/** Remove settings keys from localStorage, keep activities. */
+export function clearSettings(): void {
+  for (const key of SETTINGS_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
+    }
+  }
+}
+
+export function computeTypeBreakdown(
+  acts: Array<Pick<Activity, 'type'>>,
+): Array<{ type: string; count: number }> {
+  const m = new Map<string, number>();
+  for (const a of acts) {
+    const t = a.type || 'Unknown';
+    m.set(t, (m.get(t) ?? 0) + 1);
+  }
+  return [...m.entries()]
+    .map(([type, count]) => ({ type, count }))
+    .sort((a, b) => b.count - a.count);
+}
+
+export function buildFilteredBundle(base: BackupBundle, activities: Activity[]): BackupBundle {
+  return { ...base, activities };
+}
+
+export function formatStorageMeter(
+  count: number,
+  bytes: number | null,
+  breakdown: Array<{ type: string; count: number }>,
+): string {
+  const noun = count === 1 ? '1 activity' : `${count} activities`;
+  const parts = breakdown.slice(0, 3).map((b) => `${b.type} ${b.count}`);
+  if (bytes == null) return parts.length ? `${noun} · ${parts.join(' / ')}` : noun;
+  const mb = bytes / (1024 * 1024);
+  const size = mb >= 1 ? `~${mb.toFixed(1)} MB` : `~${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return parts.length ? `${noun} · ${size} · ${parts.join(' / ')}` : `${noun} · ${size}`;
+}
+
 export interface BackupBundle {
   version: 1;
   exportedAt: string;
