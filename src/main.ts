@@ -8,8 +8,9 @@ import {
   clearAllData,
   bulkDeleteActivities,
   buildFilteredBundle,
+  computeTypeBreakdown,
+  formatStorageMeter,
 } from './data/db';
-import { computeTypeBreakdown, formatStorageMeter } from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
 import type { Activity, Units, Goals, Preferences } from './data/types';
@@ -697,7 +698,14 @@ function openBulkDelete(ids: string[]) {
       </div>
     </div>`;
   document.body.appendChild(overlay);
-  const close = () => overlay.remove();
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener('keydown', onKey);
+  };
+  const onKey = (e: KeyboardEvent) => {
+    if (e.key === 'Escape') close();
+  };
+  document.addEventListener('keydown', onKey);
   document.getElementById('bulk-cancel')!.addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
