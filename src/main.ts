@@ -6,7 +6,10 @@ import {
   exportBackup,
   importBackup,
   clearAllData,
+  bulkDeleteActivities,
+  buildFilteredBundle,
 } from './data/db';
+import { computeTypeBreakdown, formatStorageMeter } from './data/db';
 import { renderDashboard, setCtx, onCtxChange, type TabId, type DashCtx } from './data/dashboard';
 import { loadZones, saveZones, DEFAULT_ZONES, type ZonesConfig } from './data/zones';
 import type { Activity, Units, Goals, Preferences } from './data/types';
@@ -275,10 +278,17 @@ function buildToolbar() {
   const types = [...new Set(allActs.map((a) => a.type).filter(Boolean))];
   const activeCount = countActiveFilters();
   const collapsed = localStorage.getItem('filterCollapsed') === '1';
+  const matched = matches(allActs);
+  const meterText = formatStorageMeter(
+    matched.length,
+    null,
+    computeTypeBreakdown(matched),
+  );
   toolbar.innerHTML = `
     <div class="tb-head">
       <button id="t-toggle" type="button" class="tb-toggle">${icon('filter')} ${t('filter')} ${activeCount ? `(${activeCount})` : ''} <span class="caret">${collapsed ? icon('chevron-right', 14) : icon('chevron-down', 14)}</span></button>
       ${activeCount ? `<button id="btn-reset-head" type="button" class="tb-reset-mini">${t('reset')}</button>` : ''}
+      <span class="tb-meter">${esc(meterText)}</span>
     </div>
     <div class="tb-body${collapsed ? ' collapsed' : ''}">
     <div class="tb-row">
@@ -334,6 +344,8 @@ function buildToolbar() {
       <button id="btn-backup" type="button" class="ico-btn" title="${t('backup')}">${icon('download')}</button>
       <button id="btn-restore" type="button" class="ico-btn" title="${t('restore')}">${icon('upload')}</button>
       <span class="tb-sep"></span>
+      <button id="btn-export-filtered" type="button" class="ico-btn" title="${t('export_filtered')}" ${matched.length ? '' : ' disabled'}>${icon('download')}</button>
+      <button id="btn-bulk-del" type="button" class="act-reset"${matched.length && matched.length < allActs.length ? '' : ' disabled'}>${icon('trash')} ${t('bulk_delete')} (${matched.length})</button>
       <button id="btn-clear" type="button" class="ico-btn" title="${t('clear_data')}">${icon('trash')}</button>
       <span class="tb-sep"></span>
       <button id="btn-zones" type="button" class="ico-btn" title="${t('zones')}">${icon('heart')}</button>
@@ -343,6 +355,24 @@ function buildToolbar() {
       <button id="btn-theme" type="button" class="ico-btn" title="${t(`theme_${theme}`)}">${icon('contrast')}</button>
       <button id="btn-about" type="button" class="ico-btn" title="${t('about')}">${icon('info')}</button>
     </div>`;
+
+  if (navigator.storage?.estimate) {
+    navigator.storage
+      .estimate()
+      .then((est) => {
+        const el = toolbar.querySelector('.tb-meter');
+        if (el && typeof est.usage === 'number') {
+          el.textContent = formatStorageMeter(
+            matched.length,
+            est.usage,
+            computeTypeBreakdown(matched),
+          );
+        }
+      })
+      .catch(() => {
+        /* keep counts-only meter */
+      });
+  }
 
   const bind = (id: string, fn: (v: string) => void) => {
     const el = document.getElementById(id) as HTMLInputElement | HTMLSelectElement | null;
@@ -445,6 +475,23 @@ function buildToolbar() {
   document.getElementById('btn-backup')!.addEventListener('click', onBackup);
   document.getElementById('btn-restore')!.addEventListener('click', onRestore);
   document.getElementById('btn-clear')!.addEventListener('click', openClearData);
+  document.getElementById('btn-bulk-del')!.addEventListener('click', () => {
+    const ids = matches(allActs).map((a) => a.id);
+    openBulkDelete(ids);
+  });
+  document.getElementById('btn-export-filtered')!.addEventListener('click', async () => {
+    const subset = matches(allActs);
+    if (!subset.length) return;
+    const bundle = buildFilteredBundle(await exportBackup(), subset);
+    const blob = new Blob([JSON.stringify(bundle, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `strava-filtered-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(t('backup_done'), 'success');
+  });
   document.getElementById('btn-zones')!.addEventListener('click', openZoneSettings);
   document.getElementById('btn-goals')!.addEventListener('click', openGoals);
   document.getElementById('btn-diag')!.addEventListener('click', onDiagnostics);
@@ -627,6 +674,54 @@ function openClearData() {
     resetAllState();
     close();
     showToast(t('clear_done'), 'success');
+  });
+}
+
+function openBulkDelete(ids: string[]) {
+  if (!ids.length) return;
+  const acts = allActs.filter((a) => ids.includes(a.id));
+  const breakdown = computeTypeBreakdown(acts)
+    .map((b) => `${esc(b.type)} ${b.count}`)
+    .join(' / ');
+  const overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.innerHTML = `
+    <div class="modal">
+      <h3>${esc(t('bulk_title'))}</h3>
+      <p>${esc(t('bulk_confirm'))}</p>
+      <p class="hint">${ids.length} activities · ${breakdown}</p>
+      <div class="modal-actions">
+        <button id="bulk-backup" type="button">${icon('download', 14)} ${t('clear_backup_first')}</button>
+        <button id="bulk-go" type="button" class="danger">${t('bulk_go')}</button>
+        <button id="bulk-cancel" type="button">${t('zones_cancel')}</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  const close = () => overlay.remove();
+  document.getElementById('bulk-cancel')!.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) close();
+  });
+  document.getElementById('bulk-backup')!.addEventListener('click', () => onBackup());
+  let armed = ids.length <= 100;
+  const goBtn = document.getElementById('bulk-go')!;
+  goBtn.addEventListener('click', async () => {
+    if (!armed) {
+      armed = true;
+      goBtn.textContent = t('bulk_go') + ' (' + ids.length + ')?';
+      return;
+    }
+    try {
+      await bulkDeleteActivities(ids);
+      allActs = await loadActivities();
+      ctx.page = 0;
+      buildToolbar();
+      refresh();
+      close();
+      showToast(t('clear_done'), 'success');
+    } catch (e) {
+      showToast(t('restore_fail', { e: e instanceof Error ? e.message : String(e) }), 'error');
+    }
   });
 }
 
