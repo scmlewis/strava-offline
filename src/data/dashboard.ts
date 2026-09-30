@@ -700,7 +700,9 @@ export function openActivityDetail(id: string): void {
   overlay.querySelector<HTMLButtonElement>('[data-del-detail]')?.addEventListener('click', () => {
     const id = (overlay.querySelector('[data-del-detail]') as HTMLElement).dataset.delDetail;
     close();
-    document.getElementById('dashboard')!.dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
+    document
+      .getElementById('dashboard')!
+      .dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
   });
   document.body.appendChild(overlay);
 }

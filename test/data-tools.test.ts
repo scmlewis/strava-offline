@@ -68,9 +68,7 @@ describe('buildFilteredBundle', () => {
 
 describe('formatStorageMeter', () => {
   it('renders counts only without bytes', () => {
-    expect(formatStorageMeter(3, null, [{ type: 'Run', count: 3 }])).toBe(
-      '3 activities · Run 3',
-    );
+    expect(formatStorageMeter(3, null, [{ type: 'Run', count: 3 }])).toBe('3 activities · Run 3');
   });
   it('renders MB when bytes known', () => {
     expect(formatStorageMeter(3, 4_200_000, [{ type: 'Run', count: 3 }])).toContain('MB');

@@ -6,7 +6,9 @@ import {
   deleteActivity,
   exportBackup,
   importBackup,
+  clearActivities,
   clearAllData,
+  clearSettings,
   bulkDeleteActivities,
   buildFilteredBundle,
   computeTypeBreakdown,
@@ -281,11 +283,7 @@ function buildToolbar() {
   const activeCount = countActiveFilters();
   const collapsed = localStorage.getItem('filterCollapsed') === '1';
   const matched = matches(allActs);
-  const meterText = formatStorageMeter(
-    matched.length,
-    null,
-    computeTypeBreakdown(matched),
-  );
+  const meterText = formatStorageMeter(matched.length, null, computeTypeBreakdown(matched));
   toolbar.innerHTML = `
     <div class="tb-head">
       <button id="t-toggle" type="button" class="tb-toggle">${icon('filter')} ${t('filter')} ${activeCount ? `(${activeCount})` : ''} <span class="caret">${collapsed ? icon('chevron-right', 14) : icon('chevron-down', 14)}</span></button>
@@ -647,7 +645,9 @@ function openClearData() {
       <p>${t('clear_confirm', { n: allActs.length })}</p>
       <div class="modal-actions">
         <button id="clear-backup" type="button">${icon('download', 14)} ${t('clear_backup_first')}</button>
-        <button id="clear-go" type="button" class="danger">${t('clear_go')}</button>
+        <button id="clear-acts" type="button">${t('reset_activities')}</button>
+        <button id="clear-settings" type="button">${t('reset_settings')}</button>
+        <button id="clear-go" type="button" class="danger">${t('reset_everything')}</button>
         <button id="clear-cancel" type="button">${t('zones_cancel')}</button>
       </div>
     </div>`;
@@ -670,6 +670,26 @@ function openClearData() {
     resetAllState();
     close();
     showToast(t('clear_done'), 'success');
+  });
+  document.getElementById('clear-acts')!.addEventListener('click', async () => {
+    await clearActivities();
+    allActs = [];
+    buildToolbar();
+    setDropzoneCompact(false);
+    refresh();
+    close();
+    showToast(t('clear_done'), 'success');
+  });
+  document.getElementById('clear-settings')!.addEventListener('click', () => {
+    clearSettings();
+    cfg = loadZones();
+    goals = loadGoals();
+    units = loadUnits();
+    prefs = loadPrefs();
+    buildToolbar();
+    refresh();
+    close();
+    showToast(t('zones_reset_done'), 'success');
   });
   document.getElementById('clear-go')!.addEventListener('click', async () => {
     await clearAllData();
