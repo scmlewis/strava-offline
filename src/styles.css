@@ -12,8 +12,12 @@
   --state-pressed: 0.12;
 
   --font:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang HK', 'Microsoft YaHei', sans-serif;
+    ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang HK', 'Microsoft YaHei',
+    system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+  --font-display: var(--font);
   --nav-w: 188px;
+  --grain-opacity: 0.035;
 }
 
 /* ---- Default dark theme (also applies when no data-theme is set) ---- */
@@ -180,6 +184,13 @@ html[data-theme='dark'] {
 html,
 body {
   margin: 0;
+  overflow-x: clip;
+}
+@supports not (overflow: clip) {
+  html,
+  body {
+    overflow-x: hidden;
+  }
 }
 .skip-link {
   position: absolute;
@@ -200,62 +211,132 @@ body {
 body {
   font-family: var(--font);
   background:
-    radial-gradient(1000px 500px at 70% -5%, rgba(52, 211, 153, 0.03), transparent 60%),
+    radial-gradient(1000px 500px at 70% -5%, rgba(52, 211, 153, 0.04), transparent 60%),
     var(--surface-dim);
   color: var(--fg);
   -webkit-font-smoothing: antialiased;
   font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+  scroll-behavior: smooth;
+}
+/* Subtle physical grain — breaks digital flatness without adding imagery.
+   Fixed, pointer-events-none, never on scrolling containers. */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: var(--grain-opacity);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
 }
 #app {
   max-width: 1180px;
   margin: 0 auto;
   padding: 0 16px 80px;
 }
+h1,
+h2,
+h3 {
+  font-family: var(--font-display);
+  text-wrap: balance;
+}
+p {
+  text-wrap: pretty;
+}
 
-/* ---- Topbar ---- */
+/* ---- Topbar (full-bleed ledger header) ---- */
 .topbar {
   position: sticky;
   top: 0;
   z-index: 30;
+  /* full-bleed bar inside a constrained #app: stretch to viewport edges */
+  margin-inline: calc(50% - 50vw);
+  padding: 16px max(16px, calc(50vw - 590px)) 14px;
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 22px 0 18px;
+  gap: 8px 16px;
   background: var(--surface);
-  box-shadow: var(--elevation-2);
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--outline);
+}
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.brand-mark {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  background: #14201b;
+  border: 1px solid rgba(52, 211, 153, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.brand-mark svg {
+  display: block;
 }
 .topbar h1 {
-  font-size: 1.5rem;
+  font-size: 1.18rem;
   margin: 0;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.025em;
   font-weight: 700;
+  line-height: 1.15;
   color: var(--fg);
+  text-wrap: balance;
 }
-.topbar h1 .dot {
+.topbar h1 .middot {
   color: var(--accent);
+  font-weight: 400;
 }
 .sub {
   color: var(--muted);
   font-size: 0.8rem;
   margin: 0;
-  white-space: nowrap;
+  max-width: 42ch;
+  line-height: 1.4;
 }
 
-/* ---- Dropzone (compact when data present) ---- */
+/* ---- Dropzone (ledger intake) ---- */
 .dropzone {
-  border: 1.5px dashed var(--outline-strong);
+  border: 1px dashed var(--outline-strong);
   border-radius: var(--shape-lg);
-  padding: 26px 18px;
-  text-align: center;
+  padding: 40px 28px 34px;
+  text-align: left;
   color: var(--muted);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent);
+  background: var(--surface-container-low);
   transition:
     border-color 0.18s,
     background 0.18s,
-    transform 0.18s,
-    padding 0.18s;
-  margin: 16px 0 4px;
+    transform 0.18s;
+  margin: 20px 0 4px;
+}
+.dz-full {
+  max-width: 640px;
+}
+.dz-kicker {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 10px;
+}
+.dz-full h2 {
+  margin: 0;
+  color: var(--fg);
+  font-size: clamp(1.6rem, 3.4vw, 2.4rem);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+  font-weight: 750;
+  text-wrap: balance;
 }
 .dropzone.drag {
   border-color: var(--accent);
@@ -310,25 +391,34 @@ body {
   display: none !important;
 }
 
-/* ---- Dropzone features ---- */
+/* ---- Dropzone features (numbered ledger index, no emoji) ---- */
 .dropzone-features {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-top: 24px;
-  max-width: 400px;
+  gap: 10px 20px;
+  margin: 28px 0 0;
+  padding-top: 20px;
+  border-top: 1px solid var(--outline);
+  max-width: 640px;
 }
 
 .feature {
-  font-size: 0.85em;
-  color: var(--muted);
+  font-size: 0.84rem;
+  color: var(--on-surface-variant);
   display: flex;
-  align-items: center;
-  gap: 6px;
+  align-items: baseline;
+  gap: 10px;
+  line-height: 1.45;
 }
 
-.feature-icon {
-  font-size: 1.1em;
+.feature-key {
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--accent);
+  flex: none;
+}
+.feature-wide {
+  grid-column: 1 / -1;
 }
 
 @media (max-width: 500px) {
@@ -337,11 +427,11 @@ body {
   }
 }
 
-/* ---- Toolbar (collapsible) ---- */
+/* ---- Toolbar (grouped ledger controls) ---- */
 .toolbar {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 0;
   background: var(--surface-container-low);
   border: 1px solid var(--outline);
   border-radius: var(--shape-md);
@@ -394,7 +484,7 @@ body {
   flex-direction: column;
   gap: 12px;
   margin-top: 12px;
-  padding-top: 12px;
+  padding-top: 14px;
   border-top: 1px solid var(--outline);
 }
 .tb-body.collapsed {
@@ -405,6 +495,11 @@ body {
   flex-wrap: wrap;
   align-items: center;
   gap: 10px 14px;
+  padding: 2px 0;
+}
+.tb-row + .tb-row {
+  border-top: 1px dashed var(--outline);
+  padding-top: 12px;
 }
 .tb-row.tb-actions {
   gap: 6px;
@@ -729,24 +824,33 @@ button .icon {
   border: 1px solid var(--outline);
   border-radius: var(--shape-md);
   padding: 14px 16px 14px 18px;
+  /* Ledger rule: a single 2px signal edge instead of competing fills.
+     Falls back to accent when no per-card tone is set. */
+  border-left: 2px solid var(--card-accent, var(--accent));
   box-shadow: var(--elevation-1);
-  transition: border-color 0.18s ease;
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
 }
 .card:hover {
   border-color: var(--outline-strong);
+  border-left-color: var(--card-accent, var(--accent));
 }
 .card-label {
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   color: var(--muted);
-  font-weight: 500;
-  letter-spacing: 0.02em;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 .card-value {
-  font-size: 1.55rem;
-  font-weight: 700;
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 650;
   line-height: 1.1;
-  margin: 6px 0 3px;
+  margin: 8px 0 4px;
   letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
 }
 .card-sm .card-value {
   font-size: 1.2rem;
@@ -1068,8 +1172,9 @@ button .icon {
   width: 100%;
   height: 72px;
   display: block;
-  background: #0c0c16;
+  background: var(--surface-container-high);
   border-radius: var(--shape-xs);
+  color: var(--accent);
 }
 .route-cap {
   font-size: 0.68rem;
@@ -1351,8 +1456,30 @@ button .icon {
   opacity: 1;
   transform: translateY(0);
   transition:
-    opacity 0.28s ease,
-    transform 0.28s ease;
+    opacity 0.28s cubic-bezier(0.32, 0.72, 0, 1),
+    transform 0.28s cubic-bezier(0.32, 0.72, 0, 1);
+}
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto;
+  }
+  body::after {
+    display: none;
+  }
+  .enter {
+    opacity: 1;
+    transform: none;
+  }
+  .enter.enter-active {
+    transition: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }
 
 /* ---- uPlot theme ---- */
@@ -1424,10 +1551,18 @@ kbd {
   .topbar {
     flex-direction: column;
     align-items: flex-start;
-    gap: 2px;
+    gap: 4px;
+    margin-inline: -16px;
+    padding-inline: 16px;
   }
   .topbar h1 {
     font-size: 1.02rem;
+  }
+  .sub {
+    white-space: normal;
+  }
+  .dropzone {
+    padding: 28px 20px;
   }
   .card-value {
     font-size: 1.4rem;

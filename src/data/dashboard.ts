@@ -146,6 +146,14 @@ function plotOpts(series: uPlot.Series[], height = 220, yValues?: number[]): uPl
     if (top - dataLo < minSpan) top = dataLo + minSpan;
     yScale = { range: [Math.floor(dataLo), Math.ceil(top)] };
   }
+  const root = document.documentElement;
+  const themeAttr = root.getAttribute('data-theme');
+  const isLight =
+    themeAttr === 'light' ||
+    (themeAttr !== 'dark' && window.matchMedia?.('(prefers-color-scheme: light)').matches);
+  const grid = isLight ? 'rgba(28,27,31,0.08)' : 'rgba(255,255,255,0.06)';
+  const tick = isLight ? 'rgba(28,27,31,0.14)' : 'rgba(255,255,255,0.08)';
+  const axis = isLight ? '#74777f' : '#9aa0c0';
   return {
     width: 320,
     height,
@@ -153,14 +161,14 @@ function plotOpts(series: uPlot.Series[], height = 220, yValues?: number[]): uPl
     series,
     axes: [
       {
-        stroke: '#9aa0c0',
-        grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },
-        ticks: { stroke: 'rgba(255,255,255,0.08)' },
+        stroke: axis,
+        grid: { stroke: grid, width: 1 },
+        ticks: { stroke: tick },
       },
       {
-        stroke: '#9aa0c0',
-        grid: { stroke: 'rgba(255,255,255,0.06)', width: 1 },
-        ticks: { stroke: 'rgba(255,255,255,0.08)' },
+        stroke: axis,
+        grid: { stroke: grid, width: 1 },
+        ticks: { stroke: tick },
       },
     ],
     legend: { show: false },
@@ -231,12 +239,12 @@ function renderCards(acts: Activity[]): HTMLElement {
       s.avgDistanceKm ? `${t('card_avg')} ${fmtDistance(s.avgDistanceKm)}` : '',
       '#34d399',
     ),
-    card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, '#a78bfa', true),
+    card(t('card_moving_time'), fmtHours(s.totalMovingHours), undefined, undefined, true),
     card(
       t('card_total_elev'),
       s.totalElevM ? fmtElev(s.totalElevM) : '—',
       undefined,
-      '#fbbf24',
+      undefined,
       true,
     ),
   ];
@@ -255,7 +263,8 @@ function renderCards(acts: Activity[]): HTMLElement {
   if (load.length) {
     const formLabel =
       tsb > 5 ? t('form_fresh') : tsb < -10 ? t('form_fatigued') : t('form_optimal');
-    const accent = tsb > 5 ? '#a78bfa' : tsb < -10 ? '#f87171' : '#34d399';
+    // Semantic only: red when fatigued, emerald otherwise. No decorative purple.
+    const accent = tsb < -10 ? '#f87171' : '#34d399';
     cards.push(
       card(
         t('card_form'),
@@ -275,7 +284,7 @@ function renderCards(acts: Activity[]): HTMLElement {
         t('card_date_range'),
         `${fmtShort(s.firstDate)} → ${fmtShort(s.lastDate)}`,
         undefined,
-        '#9aa0c0',
+        undefined,
       ),
     );
   }
@@ -597,7 +606,7 @@ function buildRouteSvg(route: [number, number][]): string {
     })
     .join(' ');
   return `<svg viewBox="0 0 ${W} ${H}" class="route-svg" preserveAspectRatio="none">
-    <polyline points="${pts}" fill="none" stroke="#34d399" stroke-width="1.5" stroke-linejoin="round"/>
+    <polyline points="${pts}" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
   </svg>`;
 }
 

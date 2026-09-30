@@ -21,29 +21,45 @@
     <a href="#dashboard" class="skip-link">Skip to content</a>
     <div id="app">
       <header class="topbar">
-        <h1 id="app-title">Strava <span class="dot">·</span> Offline Analyzer</h1>
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
+              <polyline
+                points="8,44 20,30 30,38 42,18 56,26"
+                stroke="#34d399"
+                stroke-width="7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle cx="42" cy="18" r="6" fill="#fbbf24" />
+            </svg>
+          </span>
+          <h1 id="app-title">Strava <span class="middot">·</span> Offline Analyzer</h1>
+        </div>
         <p class="sub" id="app-sub">Local-first PWA · your data stays on your device</p>
       </header>
 
       <section id="dropzone" class="dropzone">
         <div class="dz-full">
+          <p class="dz-kicker">Local training ledger — no upload, no account</p>
           <h2 id="dropzone-title">Drop your Strava export here</h2>
           <p id="dropzone-sub">or</p>
           <button id="pick-btn" type="button">Choose file</button>
           <input id="file-input" type="file" accept=".csv,.zip" multiple hidden />
+          <p class="hint">activities.csv or the full export .zip — parsed on your device</p>
           <div class="dropzone-features">
             <div class="feature">
-              <span class="feature-icon">&#127939;</span> Training load (TSS/CTL/ATL/TSB)
+              <span class="feature-key">01</span> Training load (TSS/CTL/ATL/TSB)
             </div>
             <div class="feature">
-              <span class="feature-icon">&#127942;</span> Personal records & race predictions
+              <span class="feature-key">02</span> Personal records &amp; race predictions
             </div>
             <div class="feature">
-              <span class="feature-icon">&#128202;</span> HR zone analysis & charts
+              <span class="feature-key">03</span> HR zone analysis &amp; charts
             </div>
-            <div class="feature"><span class="feature-icon">&#128506;</span> Route mini-maps</div>
-            <div class="feature">
-              <span class="feature-icon">&#128274;</span> 100% offline — data stays on your device
+            <div class="feature"><span class="feature-key">04</span> Route mini-maps</div>
+            <div class="feature feature-wide">
+              <span class="feature-key">05</span> 100% offline — data stays on your device
             </div>
           </div>
         </div>

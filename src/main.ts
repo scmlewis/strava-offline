@@ -302,11 +302,11 @@ function buildToolbar() {
         <option value="4">${t('weekday_thu')}</option>
         <option value="5">${t('weekday_fri')}</option>
       </select></label>
-      <label class="tb-ico" title="${t('intensity')}">${icon('flame')}(<select id="t-intensity">
+      <label class="tb-ico" title="${t('intensity')}">${icon('flame')}<select id="t-intensity">
         <option value="">${t('intensity_any')}</option>
         <option value="easy">${t('intensity_easy')}</option>
         <option value="hard">${t('intensity_hard')}</option>
-      </select>)</label>
+      </select></label>
       <label class="tb-ico" title="${t('route')}">${icon('map')}<select id="t-route">
         <option value="">${t('route_any')}</option>
         <option value="yes">${t('route_yes')}</option>
