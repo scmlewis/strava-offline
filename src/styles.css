@@ -479,6 +479,25 @@ p {
   font-size: 0.8rem;
   font-family: var(--font);
 }
+.tb-meter {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--muted);
+  letter-spacing: 0.02em;
+}
+.row-del {
+  background: none;
+  border: none;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 4px 6px;
+  border-radius: var(--shape-xs);
+  font: inherit;
+}
+.row-del:hover {
+  color: var(--danger);
+  background: rgba(248, 113, 113, 0.1);
+}
 .tb-body {
   display: flex;
   flex-direction: column;
