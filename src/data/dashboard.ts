@@ -677,6 +677,7 @@ export function openActivityDetail(id: string): void {
       <button class="modal-x" type="button" aria-label="${t('close')}">${icon('x', 16)}</button>
       <h2>${esc(a.name || a.type || t('activity'))}</h2>
       <p class="sub">${esc(a.date || '')} · ${esc(a.type || '')}</p>
+      <button class="act-reset" type="button" data-del-detail="${esc(a.id)}">${t('del_go')}</button>
       <div class="det-stats">${statGrid}</div>
       <h3 class="det-h">${t('det_hr_zones')}</h3>
       ${zoneBar}
@@ -696,6 +697,11 @@ export function openActivityDetail(id: string): void {
     if (e.target === overlay) close();
   });
   overlay.querySelector<HTMLButtonElement>('.modal-x')!.addEventListener('click', close);
+  overlay.querySelector<HTMLButtonElement>('[data-del-detail]')?.addEventListener('click', () => {
+    const id = (overlay.querySelector('[data-del-detail]') as HTMLElement).dataset.delDetail;
+    close();
+    document.getElementById('dashboard')!.dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
+  });
   document.body.appendChild(overlay);
 }
 
@@ -746,6 +752,7 @@ function renderLog(acts: Activity[], ctx: DashCtx): HTMLElement {
         <td>${a.movingTimeMin ? a.movingTimeMin.toFixed(0) + ' ' + t('unit_min') : '—'}</td>
         <td>${a.avgHr != null ? a.avgHr.toFixed(0) : '—'}</td>
         <td>${fmtTSS(tss)}</td>
+        <td><button type="button" class="row-del" data-del-id="${esc(a.id)}" title="${t('del_activity')}" aria-label="${t('del_activity')}">×</button></td>
       </tr>`;
     })
     .join('');
@@ -790,6 +797,13 @@ function renderLog(acts: Activity[], ctx: DashCtx): HTMLElement {
     tr.addEventListener('click', () => {
       const id = tr.dataset.actId;
       if (id) openActivityDetail(id);
+    });
+  });
+  el.querySelectorAll<HTMLButtonElement>('.row-del').forEach((btn) => {
+    btn.addEventListener('click', (ev) => {
+      ev.stopPropagation();
+      const id = btn.dataset.delId;
+      if (id) el.dispatchEvent(new CustomEvent('delchange', { detail: { id } }));
     });
   });
   return el;

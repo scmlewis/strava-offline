@@ -3,6 +3,7 @@ import { runIngest } from './data/ingestClient';
 import {
   saveActivities,
   loadActivities,
+  deleteActivity,
   exportBackup,
   importBackup,
   clearAllData,
@@ -977,6 +978,34 @@ let docDragDepth = 0;
 
 onCtxChange(dashboard, refresh);
 
+let lastDeleted: Activity | null = null;
+let undoTimer = 0;
+async function deleteSingleActivity(id: string) {
+  const target = allActs.find((a) => a.id === id);
+  if (!target) return;
+  if (!window.confirm(`${t('del_confirm')}\n${target.name} · ${target.date}`)) return;
+  lastDeleted = { ...target };
+  window.clearTimeout(undoTimer);
+  try {
+    await deleteActivity(id);
+    allActs = await loadActivities();
+    buildToolbar();
+    refresh();
+    showToast(t('del_undo'), 'info', 8000);
+    undoTimer = window.setTimeout(() => {
+      lastDeleted = null;
+    }, 8000);
+  } catch (e) {
+    lastDeleted = null;
+    showToast(t('restore_fail', { e: e instanceof Error ? e.message : String(e) }), 'error');
+  }
+}
+
+dashboard.addEventListener('delchange', (e) => {
+  const id = (e as CustomEvent).detail?.id as string | undefined;
+  if (id) deleteSingleActivity(id);
+});
+
 // Global error boundary — show uncaught errors in the status bar
 window.addEventListener('error', (ev) => {
   const msg = ev.message || 'Unknown error';
@@ -996,7 +1025,12 @@ window.addEventListener('unhandledrejection', (ev) => {
 
 // Keyboard shortcuts
 document.addEventListener('keydown', (ev) => {
-  if (ev.target instanceof HTMLInputElement || ev.target instanceof HTMLTextAreaElement) return;
+  if (
+    ev.target instanceof HTMLInputElement ||
+    ev.target instanceof HTMLTextAreaElement ||
+    ev.target instanceof HTMLSelectElement
+  )
+    return;
 
   if (ev.key === '?') {
     ev.preventDefault();
@@ -1020,6 +1054,19 @@ document.addEventListener('keydown', (ev) => {
     ctx.page = 0;
     refresh();
     return;
+  }
+
+  if ((ev.key === 'u' || ev.key === 'U') && lastDeleted) {
+    const copy = lastDeleted;
+    lastDeleted = null;
+    window.clearTimeout(undoTimer);
+    saveActivities([copy]).then(() => {
+      loadActivities().then((acts) => {
+        allActs = acts;
+        buildToolbar();
+        refresh();
+      });
+    });
   }
 });
 
