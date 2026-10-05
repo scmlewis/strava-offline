@@ -37,9 +37,13 @@
           <h1 id="app-title">Strava <span class="middot">·</span> Offline Analyzer</h1>
         </div>
         <p class="sub" id="app-sub">Local-first PWA · your data stays on your device</p>
+        <details class="menu" id="topbar-menu" data-testid="topbar-menu">
+          <summary class="menu-summary" data-testid="topbar-menu-toggle">Menu</summary>
+          <div class="menu-body" id="topbar-actions" data-testid="topbar-actions"></div>
+        </details>
       </header>
 
-      <section id="dropzone" class="dropzone">
+      <section id="dropzone" class="dropzone" data-testid="dropzone">
         <div class="dz-full">
           <p class="dz-kicker">Local training ledger — no upload, no account</p>
           <h2 id="dropzone-title">Drop your Strava export here</h2>
@@ -94,10 +98,10 @@
       </div>
 
       <div class="layout">
-        <nav id="nav" class="nav" aria-label="Main navigation"></nav>
+        <nav id="nav" class="nav" aria-label="Main navigation" data-testid="nav"></nav>
         <div class="content">
-          <div id="toolbar" class="toolbar" hidden></div>
-          <main id="dashboard" class="dashboard" hidden></main>
+          <div id="toolbar" class="toolbar" data-testid="toolbar" hidden></div>
+          <main id="dashboard" class="dashboard" data-testid="dashboard" hidden></main>
         </div>
       </div>
     </div>

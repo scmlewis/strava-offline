@@ -40,4 +40,9 @@ test.describe('Strava Offline Analyzer', () => {
     // After import, dashboard should render
     await expect(page.locator('#dashboard')).not.toBeEmpty();
   });
+
+  test('hash route deep-links to load tab', async ({ page }) => {
+    await page.goto('/#/load');
+    await expect(page.locator('#nav .nav-tab.active')).toContainText('Load');
+  });
 });

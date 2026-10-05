@@ -21,6 +21,17 @@ import { computeEasy } from './data/analyze';
 import { t } from './i18n';
 import { esc } from './utils';
 import { showToast } from './toast';
+import { matchesFilters, countActiveFilters, DEFAULT_FILTERS, type Filters } from './ui/store.ts';
+import { parseHash, toHash, TABS } from './ui/router.ts';
+import { buildNav as buildNavView } from './ui/nav.ts';
+import { renderToolbar } from './ui/toolbar.ts';
+import {
+  applyShellI18n,
+  setDropzoneCompact,
+  setStatus,
+  showProgress,
+  hideProgress,
+} from './ui/shell.ts';
 
 const dropzone = document.getElementById('dropzone') as HTMLDivElement;
 const fileInput = document.getElementById('file-input') as HTMLInputElement;
@@ -70,36 +81,7 @@ function cycleTheme() {
   showToast(t('theme_changed', { theme: t(`theme_${next}`) }), 'info');
 }
 
-interface Filters {
-  type: string;
-  range: string;
-  from: string;
-  to: string;
-  minKm: number;
-  maxKm: number;
-  minGain: number;
-  weekday: string; // '' = any, 'weekend' | 'weekday' | '0'..'6'
-  intensity: string; // '' | 'easy' | 'hard'
-  hasRoute: boolean | null; // null = any
-  minPace: number; // sec/km, 0 = any
-  maxPace: number; // sec/km, 0 = any
-  search: string;
-}
-let filters: Filters = {
-  type: '',
-  range: 'all',
-  from: '',
-  to: '',
-  minKm: 0,
-  maxKm: 0,
-  minGain: 0,
-  weekday: '',
-  intensity: '',
-  hasRoute: null,
-  minPace: 0,
-  maxPace: 0,
-  search: '',
-};
+let filters: Filters = { ...DEFAULT_FILTERS };
 const ctx: DashCtx = { tab: 'overview', sortKey: 'date', sortDir: 'desc', search: '', page: 0 };
 
 // ---- persistence ----
@@ -144,91 +126,20 @@ function savePrefs() {
   localStorage.setItem('prefs', JSON.stringify(prefs));
 }
 
-import { icon, type IconName } from './icons';
-
-const TABS: Array<{ id: TabId; label: string; icon: IconName }> = [
-  { id: 'overview', label: t('nav_overview'), icon: 'overview' },
-  { id: 'volume', label: t('nav_volume'), icon: 'activity' },
-  { id: 'load', label: t('nav_load'), icon: 'flame' },
-  { id: 'zones', label: t('nav_zones'), icon: 'heart' },
-  { id: 'perf', label: t('nav_perf'), icon: 'star' },
-  { id: 'log', label: t('nav_log'), icon: 'list' },
-];
-
-let statusTimer = 0;
-function setStatus(msg: string, kind: 'ok' | 'err' | 'info' = 'info') {
-  statusEl.hidden = false;
-  statusEl.className = `status ${kind}`;
-  statusEl.textContent = msg;
-  // Auto-dismiss success/info after 3s
-  if (kind !== 'err') {
-    clearTimeout(statusTimer);
-    statusTimer = window.setTimeout(() => {
-      statusEl.hidden = true;
-    }, 3000);
-  }
-}
-
-const progressEl = document.getElementById('progress') as HTMLDivElement;
-const progressFill = document.getElementById('progress-fill') as HTMLDivElement;
-const progressLabel = document.getElementById('progress-label') as HTMLSpanElement;
-
-function showProgress(done: number, total: number, phase: string) {
-  progressEl.hidden = false;
-  const pct = total > 0 ? Math.round((done / total) * 100) : 0;
-  progressFill.style.width = `${pct}%`;
-  progressLabel.textContent = total > 0 ? t('st_progress', { done, total }) : t('st_parsing');
-  if (phase) progressLabel.textContent += ` · ${phase}`;
-}
-function hideProgress() {
-  progressEl.hidden = true;
-  progressFill.style.width = '0%';
-}
+import { icon } from './icons';
 
 function matches(acts: Activity[]): Activity[] {
-  const now = Date.now();
-  const rangeDays: Record<string, number> = { all: Infinity, '90': 90, '180': 180, '365': 365 };
-  const days = rangeDays[filters.range] ?? Infinity;
-  const q = filters.search.trim().toLowerCase();
-  const fromT = filters.from ? new Date(filters.from + 'T00:00:00').getTime() : -Infinity;
-  const toT = filters.to ? new Date(filters.to + 'T23:59:59').getTime() : Infinity;
+  const pre = matchesFilters(acts, filters);
+  // `intensity` stays HR-histogram-based here (store.ts does NOT evaluate it).
+  if (!filters.intensity) return pre;
   const easySet = new Set<string>(); // activity ids classified easy (per current zones)
-  if (filters.intensity) {
-    for (const a of acts) {
-      if (isEasy(a)) easySet.add(a.id);
-    }
+  for (const a of acts) {
+    if (isEasy(a)) easySet.add(a.id);
   }
-  return acts.filter((a) => {
-    if (filters.type && !(a.type || '').toLowerCase().includes(filters.type.toLowerCase()))
-      return false;
-    if (days !== Infinity && a.ts && (now - a.ts) / 86400000 > days) return false;
-    if (a.ts && a.ts < fromT) return false;
-    if (a.ts && a.ts > toT) return false;
-    if (filters.minKm > 0 && (a.distanceKm ?? 0) < filters.minKm) return false;
-    if (filters.maxKm > 0 && (a.distanceKm ?? 0) > filters.maxKm) return false;
-    if (filters.minGain > 0 && (a.elevationGainM ?? 0) < filters.minGain) return false;
-    if (filters.hasRoute !== null) {
-      const has = !!(a.route && a.route.length > 1);
-      if (has !== filters.hasRoute) return false;
-    }
-    if (filters.weekday) {
-      if (!a.ts) return false;
-      const dow = new Date(a.ts).getDay(); // 0=Sun..6=Sat
-      if (filters.weekday === 'weekend' && dow !== 0 && dow !== 6) return false;
-      if (filters.weekday === 'weekday' && (dow === 0 || dow === 6)) return false;
-      if (/^[0-6]$/.test(filters.weekday) && String(dow) !== filters.weekday) return false;
-    }
-    if (filters.intensity) {
-      const easy = easySet.has(a.id);
-      if (filters.intensity === 'easy' && !easy) return false;
-      if (filters.intensity === 'hard' && easy) return false;
-    }
-    if (filters.minPace > 0 || filters.maxPace > 0) {
-      const pace = a.distanceKm && a.movingTimeMin ? (a.movingTimeMin * 60) / a.distanceKm : 0; // sec/km
-      if (filters.minPace > 0 && pace < filters.minPace) return false;
-      if (filters.maxPace > 0 && pace > filters.maxPace) return false;
-    }
-    if (q && !`${a.name} ${a.type} ${a.date}`.toLowerCase().includes(q)) return false;
+  return pre.filter((a) => {
+    const easy = easySet.has(a.id);
+    if (filters.intensity === 'easy' && !easy) return false;
+    if (filters.intensity === 'hard' && easy) return false;
     return true;
   });
 }
@@ -269,116 +180,56 @@ function updateMeter() {
 }
 
 // ---- nav (tabs) ----
-function applyShellI18n() {
-  const set = (id: string, key: string) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = t(key);
-  };
-  set('app-title', 'app_title');
-  set('app-sub', 'app_sub');
-  set('dropzone-title', 'dropzone_title');
-  set('dropzone-sub', 'dropzone_sub');
-  const pick = document.getElementById('pick-btn');
-  if (pick) pick.textContent = t('choose_file');
-  const pickMini = document.getElementById('pick-btn-mini');
-  if (pickMini) pickMini.textContent = t('choose_file');
-  document.documentElement.lang = 'en';
-}
-
 function buildNav() {
   applyShellI18n();
-  nav.innerHTML = TABS.map(
-    (t) => `<button class="nav-tab${ctx.tab === t.id ? ' active' : ''}" data-tab="${t.id}">
-      <span class="nav-ico">${icon(t.icon, 20)}</span><span class="nav-lbl">${t.label}</span>
-    </button>`,
-  ).join('');
-  nav.querySelectorAll<HTMLButtonElement>('.nav-tab').forEach((b) => {
-    b.addEventListener('click', () => {
-      ctx.tab = b.dataset.tab as TabId;
-      buildNav();
-      refresh();
-    });
-  });
+  buildNavView(nav, ctx.tab, selectTab);
 }
 
-// ---- toolbar ----
+function selectTab(next: TabId): void {
+  // hashchange event drives the re-render; same-hash clicks re-render directly
+  // (setting an identical hash would not fire hashchange).
+  if (window.location.hash !== toHash(next)) {
+    window.location.hash = toHash(next);
+  } else {
+    ctx.tab = next;
+    buildNav();
+    refresh();
+  }
+}
+
+function syncTabFromHash(): void {
+  const tab = parseHash(window.location.hash);
+  if (tab !== ctx.tab) {
+    ctx.tab = tab;
+    buildNav();
+    refresh();
+  }
+}
+window.addEventListener('hashchange', syncTabFromHash);
+
+// ---- toolbar (markup lives in ui/toolbar.ts; wiring below stays verbatim) ----
 function buildToolbar() {
-  const types = [...new Set(allActs.map((a) => a.type).filter(Boolean))];
-  const activeCount = countActiveFilters();
+  const activeCount = countActiveFilters(filters);
   const collapsed = localStorage.getItem('filterCollapsed') === '1';
   const matched = matches(allActs);
-  const meterText = formatStorageMeter(matched.length, null, computeTypeBreakdown(matched));
-  toolbar.innerHTML = `
-    <div class="tb-head">
-      <button id="t-toggle" type="button" class="tb-toggle">${icon('filter')} ${t('filter')} ${activeCount ? `(${activeCount})` : ''} <span class="caret">${collapsed ? icon('chevron-right', 14) : icon('chevron-down', 14)}</span></button>
-      ${activeCount ? `<button id="btn-reset-head" type="button" class="tb-reset-mini">${t('reset')}</button>` : ''}
-      <span class="tb-meter">${esc(meterText)}</span>
-    </div>
-    <div class="tb-body${collapsed ? ' collapsed' : ''}">
-    <div class="tb-row">
-      <input id="t-search" class="tb-input" type="search" placeholder="${t('search_placeholder')}" value="${esc(filters.search)}" />
-      <label class="tb-ico" title="${t('type')}">${icon('tag')}<select id="t-type"><option value="">${t('all_types')}</option>${types.map((ty) => `<option ${filters.type === ty ? 'selected' : ''}>${esc(ty)}</option>`).join('')}</select></label>
-      <label class="tb-ico" title="${t('time_range')}">${icon('calendar')}<select id="t-range">
-        <option value="all">${t('all_time')}</option>
-        <option value="90">${t('last_90')}</option>
-        <option value="180">${t('last_180')}</option>
-        <option value="365">${t('last_365')}</option>
-      </select></label>
-      <label class="tb-ico" title="${t('weekday')}">${icon('week')}<select id="t-weekday">
-        <option value="">${t('weekday_any')}</option>
-        <option value="weekday">${t('weekday_weekday')}</option>
-        <option value="weekend">${t('weekday_weekend')}</option>
-        <option value="6">${t('weekday_sat')}</option>
-        <option value="0">${t('weekday_sun')}</option>
-        <option value="1">${t('weekday_mon')}</option>
-        <option value="2">${t('weekday_tue')}</option>
-        <option value="3">${t('weekday_wed')}</option>
-        <option value="4">${t('weekday_thu')}</option>
-        <option value="5">${t('weekday_fri')}</option>
-      </select></label>
-      <label class="tb-ico" title="${t('intensity')}">${icon('flame')}<select id="t-intensity">
-        <option value="">${t('intensity_any')}</option>
-        <option value="easy">${t('intensity_easy')}</option>
-        <option value="hard">${t('intensity_hard')}</option>
-      </select></label>
-      <label class="tb-ico" title="${t('route')}">${icon('map')}<select id="t-route">
-        <option value="">${t('route_any')}</option>
-        <option value="yes">${t('route_yes')}</option>
-        <option value="no">${t('route_no')}</option>
-      </select></label>
-    </div>
-    <div class="tb-row">
-      <label class="tb-inline">${t('distance')} <input id="t-minkm" type="number" min="0" step="1" value="${filters.minKm || ''}" placeholder="${t('min')}" />–<input id="t-maxkm" type="number" min="0" step="1" value="${filters.maxKm || ''}" placeholder="${t('max')}" /> km</label>
-      <label class="tb-inline">${t('elev_gain')} <input id="t-mingain" type="number" min="0" step="10" value="${filters.minGain || ''}" placeholder="m" /> m</label>
-      <label class="tb-inline">${t('pace')} <input id="t-minpace" type="number" min="0" step="5" value="${filters.minPace || ''}" placeholder="${t('slower')}" />–<input id="t-maxpace" type="number" min="0" step="5" value="${filters.maxPace || ''}" placeholder="${t('faster')}" /> ${t('sec_per_km')}</label>
-      <label class="tb-ico" title="${t('from')}"><span class="dot dot-green"></span><input id="t-from" type="date" value="${filters.from}" /></label>
-      <label class="tb-ico" title="${t('to')}"><span class="dot dot-red"></span><input id="t-to" type="date" value="${filters.to}" /></label>
-      <label class="tb-ico" title="${t('unit')}">${icon('ruler')}<select id="t-unit">
-        <option value="km" ${units.dist === 'km' ? 'selected' : ''}>km</option>
-        <option value="mi" ${units.dist === 'mi' ? 'selected' : ''}>mi</option>
-      </select></label>
-      <label class="tb-ico" title="${t('week_start')}">${icon('calendar')}<select id="t-weekstart">
-        <option value="sun" ${prefs.weekStart === 'sun' ? 'selected' : ''}>${t('week_sun')}</option>
-        <option value="mon" ${prefs.weekStart === 'mon' ? 'selected' : ''}>${t('week_mon')}</option>
-      </select></label>
-      <button id="btn-reset" type="button" class="act-reset"${activeCount ? '' : ' disabled'}>${icon('refresh')} ${t('reset')} (${activeCount})</button>
-    </div>
-    </div>
-    <div class="tb-actions">
-      <button id="btn-backup" type="button" class="ico-btn" title="${t('backup')}">${icon('download')}</button>
-      <button id="btn-restore" type="button" class="ico-btn" title="${t('restore')}">${icon('upload')}</button>
-      <span class="tb-sep"></span>
-      <button id="btn-export-filtered" type="button" class="ico-btn" title="${t('export_filtered')}" ${matched.length ? '' : ' disabled'}>${icon('download')}</button>
-      <button id="btn-bulk-del" type="button" class="act-reset"${matched.length && matched.length < allActs.length ? '' : ' disabled'}>${icon('trash')} ${t('bulk_delete')} (${matched.length})</button>
-      <button id="btn-clear" type="button" class="ico-btn" title="${t('clear_data')}">${icon('trash')}</button>
-      <span class="tb-sep"></span>
-      <button id="btn-zones" type="button" class="ico-btn" title="${t('zones')}">${icon('heart')}</button>
-      <button id="btn-goals" type="button" class="ico-btn" title="${t('goals')}">${icon('target')}</button>
-      <span class="tb-sep"></span>
-      <button id="btn-diag" type="button" class="ico-btn" title="${t('diagnostics')}">${icon('list')}</button>
-      <button id="btn-theme" type="button" class="ico-btn" title="${t(`theme_${theme}`)}">${icon('contrast')}</button>
-      <button id="btn-about" type="button" class="ico-btn" title="${t('about')}">${icon('info')}</button>
-    </div>`;
+  renderToolbar(toolbar, {
+    acts: allActs,
+    matched,
+    filters,
+    units,
+    prefs,
+    theme,
+    activeCount,
+    collapsed,
+  });
+  // Topbar overflow: the action buttons keep their ids (handlers + tests depend
+  // on them) but live in the topbar menu instead of the toolbar.
+  const menuSlot = document.getElementById('topbar-actions');
+  const actions = toolbar.querySelector('.tb-actions');
+  if (menuSlot && actions) {
+    menuSlot.innerHTML = '';
+    menuSlot.appendChild(actions);
+  }
 
   updateMeter();
 
@@ -509,41 +360,9 @@ function buildToolbar() {
 }
 
 function resetFilters() {
-  filters = {
-    type: '',
-    range: 'all',
-    from: '',
-    to: '',
-    minKm: 0,
-    maxKm: 0,
-    minGain: 0,
-    weekday: '',
-    intensity: '',
-    hasRoute: null,
-    minPace: 0,
-    maxPace: 0,
-    search: '',
-  };
+  filters = { ...DEFAULT_FILTERS };
   buildToolbar();
   refresh();
-}
-
-function countActiveFilters(): number {
-  let n = 0;
-  if (filters.type) n++;
-  if (filters.range !== 'all') n++;
-  if (filters.from) n++;
-  if (filters.to) n++;
-  if (filters.minKm) n++;
-  if (filters.maxKm) n++;
-  if (filters.minGain) n++;
-  if (filters.weekday) n++;
-  if (filters.intensity) n++;
-  if (filters.hasRoute !== null) n++;
-  if (filters.minPace) n++;
-  if (filters.maxPace) n++;
-  if (filters.search) n++;
-  return n;
 }
 
 // ---- diagnostics (debug parse issues) ----
@@ -961,11 +780,6 @@ function openAbout() {
 }
 
 // ---- drag & drop (compact when data present, expands on any document drag) ----
-function setDropzoneCompact(compact: boolean) {
-  dropzone.classList.toggle('compact', compact);
-  dropzone.querySelector('.dz-full')?.classList.toggle('hidden', compact);
-  dropzone.querySelector('.dz-mini')?.classList.toggle('hidden', !compact);
-}
 pickBtn.addEventListener('click', () => fileInput.click());
 const pickMini = document.getElementById('pick-btn-mini');
 if (pickMini) pickMini.addEventListener('click', () => fileInput.click());
@@ -1120,7 +934,7 @@ document.addEventListener('keydown', (ev) => {
   const num = parseInt(ev.key, 10);
   if (num >= 1 && num <= TABS.length && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
     ev.preventDefault();
-    ctx.tab = TABS[num - 1].id;
+    ctx.tab = TABS[num - 1];
     ctx.page = 0;
     refresh();
     return;
@@ -1170,6 +984,7 @@ function openShortcutsOverlay() {
 }
 
 // ---- boot ----
+ctx.tab = parseHash(window.location.hash);
 loadActivities().then((acts) => {
   if (acts.length) {
     allActs = acts;
