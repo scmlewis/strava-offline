@@ -61,8 +61,7 @@ export function matchesFilters(acts: Activity[], f: Filters, now = Date.now()): 
       if (/^[0-6]$/.test(f.weekday) && String(dow) !== f.weekday) return false;
     }
     if (f.minPace > 0 || f.maxPace > 0) {
-      const pace =
-        a.distanceKm && a.movingTimeMin ? (a.movingTimeMin * 60) / a.distanceKm : 0;
+      const pace = a.distanceKm && a.movingTimeMin ? (a.movingTimeMin * 60) / a.distanceKm : 0;
       if (f.minPace > 0 && pace < f.minPace) return false;
       if (f.maxPace > 0 && pace > f.maxPace) return false;
     }

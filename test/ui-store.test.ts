@@ -24,21 +24,19 @@ describe('matchesFilters', () => {
   });
   it('filters by type substring case-insensitively', () => {
     const acts = [act('a', { type: 'Run' }), act('b', { type: 'Ride' })];
-    expect(
-      matchesFilters(acts, { ...DEFAULT_FILTERS, type: 'run' }).map((a) => a.id),
-    ).toEqual(['a']);
+    expect(matchesFilters(acts, { ...DEFAULT_FILTERS, type: 'run' }).map((a) => a.id)).toEqual([
+      'a',
+    ]);
   });
   it('filters by minKm', () => {
     const acts = [act('a', { distanceKm: 5 }), act('b', { distanceKm: 12 })];
-    expect(
-      matchesFilters(acts, { ...DEFAULT_FILTERS, minKm: 10 }).map((a) => a.id),
-    ).toEqual(['b']);
+    expect(matchesFilters(acts, { ...DEFAULT_FILTERS, minKm: 10 }).map((a) => a.id)).toEqual(['b']);
   });
   it('filters by search across name/type/date', () => {
     const acts = [act('Morning Run'), act('Evening Ride')];
-    expect(
-      matchesFilters(acts, { ...DEFAULT_FILTERS, search: 'ride' }).map((a) => a.id),
-    ).toEqual(['Evening Ride']);
+    expect(matchesFilters(acts, { ...DEFAULT_FILTERS, search: 'ride' }).map((a) => a.id)).toEqual([
+      'Evening Ride',
+    ]);
   });
 });
 
