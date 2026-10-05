@@ -6,3 +6,4 @@ dist-ssr
 .vite
 dbg.ts
 *.log
+.superpowers/brainstorm/
