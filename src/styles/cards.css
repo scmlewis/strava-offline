@@ -1,0 +1,435 @@
+/* ---- Dashboard ---- */
+.dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+  gap: 12px;
+}
+.card {
+  position: relative;
+  overflow: hidden;
+  background: var(--surface-container);
+  border: 1px solid var(--outline);
+  border-radius: var(--shape-md);
+  padding: 14px 16px 14px 18px;
+  /* Ledger rule: a single 2px signal edge instead of competing fills.
+     Falls back to accent when no per-card tone is set. */
+  border-left: 2px solid var(--card-accent, var(--accent));
+  box-shadow: var(--elevation-1);
+  transition:
+    border-color 0.18s ease,
+    transform 0.18s ease;
+}
+.card:hover {
+  border-color: var(--outline-strong);
+  border-left-color: var(--card-accent, var(--accent));
+}
+.card-label {
+  font-size: 0.7rem;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.card-value {
+  font-family: var(--font-mono);
+  font-size: 1.5rem;
+  font-weight: 650;
+  line-height: 1.1;
+  margin: 8px 0 4px;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.card-sm .card-value {
+  font-size: 1.2rem;
+}
+.card-sub {
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+
+/* ---- Charts grid ---- */
+.grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+.chart-wrap {
+  background: var(--surface-container-low);
+  border: 1px solid var(--outline);
+  border-radius: var(--shape-md);
+  padding: 16px;
+  margin: 0;
+  min-width: 0;
+  overflow: hidden;
+  box-shadow: var(--elevation-1);
+  transition: border-color 0.18s ease;
+}
+.chart-wrap:hover {
+  border-color: var(--outline-strong);
+}
+.chart-wrap > div {
+  min-width: 0;
+}
+.chart-wrap h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 12px;
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+.chart-wrap h3::before {
+  content: '';
+  width: 3px;
+  height: 14px;
+  border-radius: 2px;
+  background: var(--accent);
+  display: inline-block;
+}
+
+/* ---- Heatmap with month axis ---- */
+.hm-wrap {
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--surface-container-high) transparent;
+}
+.hm-wrap::-webkit-scrollbar {
+  height: 10px;
+}
+.hm-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+.hm-wrap::-webkit-scrollbar-thumb {
+  background: var(--surface-container-high);
+  border-radius: var(--shape-xs);
+  border: 2px solid var(--surface-dim);
+}
+.hm-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--outline-strong);
+}
+.hm-axis {
+  position: relative;
+  height: 14px;
+  margin-bottom: 3px;
+  font-size: 0.62rem;
+  color: var(--muted);
+}
+.hm-month {
+  position: absolute;
+  top: 0;
+  white-space: nowrap;
+}
+.heatmap {
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(7, 1fr);
+  gap: 3px;
+}
+.hm-cell {
+  width: 15px;
+  height: 15px;
+  border-radius: var(--shape-xs);
+  background: var(--surface-container-high);
+}
+.hm-cell.empty {
+  background: transparent;
+}
+.hm-cell.lvl-0 {
+  background: var(--surface-container-high);
+}
+.hm-cell.lvl-1 {
+  background: #1f6f4a;
+}
+.hm-cell.lvl-2 {
+  background: #2a9d63;
+}
+.hm-cell.lvl-3 {
+  background: #46c97f;
+}
+.hm-cell.lvl-4 {
+  background: #7df0a8;
+}
+.hm-legend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 10px;
+}
+.hm-legend .hm-cell {
+  display: inline-block;
+}
+.hm-info {
+  cursor: help;
+  opacity: 0.5;
+  display: inline-flex;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.hm-info:hover {
+  opacity: 1;
+}
+
+/* ---- Goals ---- */
+.goal-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.goal-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.84rem;
+}
+.goal-num {
+  font-weight: 700;
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+.goal-track {
+  background: var(--surface-container-high);
+  border-radius: var(--shape-sm);
+  height: 10px;
+  overflow: hidden;
+}
+.goal-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: var(--shape-sm);
+  transition: width 0.5s ease;
+}
+
+/* ---- Zone bars ---- */
+.zone-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.zone-row {
+  display: grid;
+  grid-template-columns: 78px 74px 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.82rem;
+}
+.zone-name {
+  color: var(--fg);
+  font-weight: 600;
+}
+.zone-bpm {
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+.zone-track {
+  background: var(--surface-container-high);
+  border-radius: var(--shape-xs);
+  height: 16px;
+  overflow: hidden;
+}
+.zone-fill {
+  height: 100%;
+  border-radius: var(--shape-xs) 0 0 var(--shape-xs);
+  transition: width 0.3s ease;
+}
+.zone-pct {
+  text-align: right;
+  color: var(--muted);
+}
+
+/* ---- Tables ---- */
+.table-scroll {
+  max-height: 460px;
+  overflow: auto;
+  border-radius: var(--shape-sm);
+}
+.climb-scroll {
+  max-height: 260px;
+  overflow: auto;
+  border-radius: var(--shape-sm);
+}
+.act-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+.act-table th,
+.act-table td {
+  text-align: left;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--outline);
+  white-space: nowrap;
+}
+.act-table th {
+  color: var(--muted);
+  position: sticky;
+  top: 0;
+  background: var(--surface-container);
+  font-weight: 600;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  cursor: default;
+}
+.act-table th.sortable {
+  cursor: pointer;
+  user-select: none;
+}
+.act-table th.sortable:hover {
+  color: var(--fg);
+}
+.act-table tbody tr {
+  transition: background 0.12s ease;
+}
+.act-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pager {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 10px;
+  font-size: 0.82rem;
+  flex-wrap: wrap;
+}
+.pager button {
+  background: var(--surface-container);
+  color: var(--fg);
+  border: 1px solid var(--outline-strong);
+  border-radius: var(--shape-sm);
+  padding: 7px 14px;
+  cursor: pointer;
+  font-family: var(--font);
+  transition:
+    border-color 0.15s,
+    transform 0.1s;
+}
+.pager button:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+.pager button:active:not(:disabled) {
+  transform: scale(0.95);
+}
+.pager button:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+.pg-info {
+  color: var(--muted);
+}
+.pg-jump {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+.pg-jump input {
+  width: 64px;
+  background: var(--surface-dim);
+  color: var(--fg);
+  border: 1px solid var(--outline-strong);
+  border-radius: var(--shape-xs);
+  padding: 6px 8px;
+  font-family: var(--font);
+}
+
+/* ---- Routes ---- */
+.route-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+}
+.route-cell {
+  background: var(--surface-container);
+  border: 1px solid var(--outline);
+  border-radius: var(--shape-sm);
+  padding: 7px;
+  transition: border-color 0.15s;
+  cursor: pointer;
+}
+.route-cell:hover {
+  border-color: var(--accent);
+}
+.route-svg {
+  width: 100%;
+  height: 72px;
+  display: block;
+  background: var(--surface-container-high);
+  border-radius: var(--shape-xs);
+  color: var(--accent);
+}
+.route-cap {
+  font-size: 0.68rem;
+  color: var(--muted);
+  margin-top: 5px;
+  text-align: center;
+}
+.hint {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+/* ---- VO2max / Climb / Streak ---- */
+.vdot-num {
+  font-size: 2.3rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--accent);
+  margin: 4px 0 6px;
+}
+.streak-row {
+  display: flex;
+  gap: 12px;
+}
+.streak-box {
+  flex: 1;
+  background: var(--surface-container);
+  border: 1px solid var(--outline);
+  border-radius: var(--shape-md);
+  padding: 14px;
+  text-align: center;
+}
+.streak-num {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+.streak-lbl {
+  font-size: 0.72rem;
+  color: var(--muted);
+  margin-top: 4px;
+}
+
+/* ---- uPlot theme ---- */
+.uplot,
+.uplot * {
+  font-family: var(--font) !important;
+}
+.uplot .u-axis {
+  color: var(--muted);
+}
+.u-title {
+  color: var(--fg);
+  font-weight: 600;
+}
+.u-legend {
+  color: var(--muted);
+}
+.u-legend .u-marker {
+  border-radius: var(--shape-xs);
+}

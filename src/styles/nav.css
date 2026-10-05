@@ -1,0 +1,59 @@
+/* ---- Sidebar nav ---- */
+.nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: sticky;
+  top: 76px;
+  align-self: start;
+}
+.nav-tab {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid transparent;
+  border-radius: var(--shape-sm);
+  padding: 10px 12px;
+  font-size: 0.88rem;
+  cursor: pointer;
+  font-family: var(--font);
+  text-align: left;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    border-color 0.15s,
+    transform 0.1s;
+}
+.nav-tab:hover {
+  background: var(--surface);
+  color: var(--fg);
+}
+.nav-tab:active {
+  transform: scale(0.97);
+}
+.nav-tab.active {
+  background: var(--accent-dim);
+  color: var(--fg);
+  border-color: rgba(52, 211, 153, 0.2);
+  font-weight: 600;
+}
+.nav-ico {
+  width: 20px;
+  text-align: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+}
+.nav-ico .icon {
+  width: 20px;
+  height: 20px;
+}
+.nav-tab.active .nav-ico .icon {
+  color: var(--accent);
+}
+.nav-lbl {
+  white-space: nowrap;
+}

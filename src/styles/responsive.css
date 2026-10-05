@@ -1,0 +1,97 @@
+@media (max-width: 500px) {
+  .dropzone-features {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  body {
+    scroll-behavior: auto;
+  }
+  body::after {
+    display: none;
+  }
+  .enter {
+    opacity: 1;
+    transform: none;
+  }
+  .enter.enter-active {
+    transition: none;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ---- Responsive: collapse sidebar to bottom tab bar on mobile ---- */
+@media (max-width: 760px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 40;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 2px;
+    background: var(--surface);
+    box-shadow: var(--elevation-2);
+    border-top: 1px solid var(--outline);
+    padding: 6px 4px;
+    margin: 0;
+  }
+  .nav-tab {
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 4px;
+    font-size: 0.62rem;
+    border-radius: var(--shape-sm);
+    flex: 1;
+    min-height: 48px;
+  }
+  .nav-lbl {
+    white-space: nowrap;
+  }
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    margin-inline: -16px;
+    padding-inline: 16px;
+  }
+  .topbar h1 {
+    font-size: 1.02rem;
+  }
+  .sub {
+    white-space: normal;
+  }
+  .dropzone {
+    padding: 28px 20px;
+  }
+  .card-value {
+    font-size: 1.4rem;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  #app {
+    padding-bottom: 84px;
+  }
+}
+
+@media (max-width: 760px) {
+  .toast-container {
+    bottom: 80px;
+    right: 12px;
+    left: 12px;
+  }
+}
