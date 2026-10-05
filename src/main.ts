@@ -709,9 +709,8 @@ document.addEventListener('keydown', (ev) => {
   const num = parseInt(ev.key, 10);
   if (num >= 1 && num <= TABS.length && !ev.ctrlKey && !ev.metaKey && !ev.altKey) {
     ev.preventDefault();
-    ctx.tab = TABS[num - 1];
     ctx.page = 0;
-    refresh();
+    selectTab(TABS[num - 1]);
     return;
   }
 

@@ -45,4 +45,11 @@ test.describe('Strava Offline Analyzer', () => {
     await page.goto('/#/load');
     await expect(page.locator('#nav .nav-tab.active')).toContainText('Load');
   });
+
+  test('keyboard number switches tab via hash route', async ({ page }) => {
+    await page.goto('/');
+    await page.keyboard.press('3');
+    await expect(page).toHaveURL(/#\/load/);
+    await expect(page.locator('#nav .nav-tab.active')).toContainText('Load');
+  });
 });

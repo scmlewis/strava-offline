@@ -1,33 +1,34 @@
-# Task 1: Add ESLint with TypeScript strict rules
+# Task 1 Report: UI store — state + filter predicate
 
-## What I implemented
+## What you implemented
+- Created `src/ui/store.ts` (verbatim from brief): `TabId` type, `Filters` interface (13 fields), `DEFAULT_FILTERS`, `matchesFilters(acts, f, now?)` predicate covering type substring, range/from/to dates, minKm/maxKm, minGain, hasRoute, weekday (weekend/weekday/0-6), minPace/maxPace (sec/km derived from movingTimeMin/distanceKm), and free-text search over name/type/date. `intensity` accepted + counted but intentionally not evaluated (deferred to `main.ts` `isEasy()` until Task 4, per brief note). Plus `countActiveFilters(f)` counting each non-default field (13 checks).
+- Created `test/ui-store.test.ts` (brief's test, with one syntax fix — see Issues): 5 tests across `matchesFilters` (default passthrough, type substring, minKm, search) and `countActiveFilters` (0 for defaults, 2 for type+minKm).
+- No other files modified — pure addition, no wiring into `main.ts` (per brief, wiring is Task 4).
 
-- Installed ESLint dependencies: `eslint`, `@eslint/js`, `typescript-eslint` (skipped `eslint-plugin-unicorn` per instructions)
-- Created `eslint.config.js` with TypeScript strict rules (recommended configs, custom rules for unused vars, no-explicit-any, prefer-const, no-var)
-- Added `"lint": "eslint src/ test/"` script to `package.json`
-- Fixed lint errors in source files
+## What you tested and test results
+- Focused: `npx vitest run test/ui-store.test.ts` → 5 passed.
+- Full suite: `npm test` (`vitest run`) → 7 files, 71 tests passed (includes new file).
+- Typecheck: `npm run typecheck` (`tsc --noEmit`) → clean, exit 0.
 
-## What I tested and test results
-
-- `npm run lint` — passes (exit 0), 0 errors, 3 warnings (intentional `any` types in `fit.ts` from untyped library)
-- `npm run typecheck` — passes
+## TDD Evidence
+- RED — command: `npx vitest run test/ui-store.test.ts` (run after writing test, before `src/ui/store.ts` existed).
+  - Output: `FAIL test/ui-store.test.ts — Error: Cannot find module '../src/ui/store.ts' ... Failed to load url ../src/ui/store.ts ... Does the file exist?` / `Test Files 1 failed, Tests no tests`.
+  - Why expected: brief Step 2 predicts exactly this — file does not exist yet, so import resolution fails. Confirms the test exercises the new module.
+- GREEN — command: `npx vitest run test/ui-store.test.ts` (after writing `src/ui/store.ts`).
+  - Output: `✓ test/ui-store.test.ts (5 tests) 6ms / Test Files 1 passed / Tests 5 passed`.
+  - Then `npm run typecheck` → clean; then `npm test` → 71 passed.
 
 ## Files changed
-
-| File | Change |
-|------|--------|
-| `eslint.config.js` | Created — ESLint flat config with TypeScript strict rules |
-| `package.json` | Added `lint` script and ESLint devDependencies |
-| `package-lock.json` | Updated lockfile |
-| `src/data/fit.ts` | Removed `@ts-ignore` directive (was unused — import compiles fine without it) |
-| `src/data/dashboard.ts` | Replaced useless `let cmp = 0` assignment with `const` ternary |
+- `src/ui/store.ts` (new, ~91 lines)
+- `test/ui-store.test.ts` (new, ~49 lines)
+- Commit: `d03df2f feat: add UI store with filter predicate and counter`
 
 ## Self-review findings
-
-1. **`@ts-ignore` removal**: The `@ts-ignore` on the `fit-file-parser` import was flagged as unused by both `@typescript-eslint/ban-ts-comment` (should be `@ts-expect-error`) and TypeScript itself (the directive was unnecessary). Since removing it doesn't break compilation, I removed it rather than replacing it with `@ts-expect-error` on a non-erroring line.
-
-2. **3 warnings for `no-explicit-any`**: These come from `fit-file-parser` which has no type definitions. The `any` types are unavoidable without writing custom type declarations for the library. Left as warnings (not errors) per config.
+- Completeness: all 5 exports from the brief's interface list present (`TabId`, `Filters`, `DEFAULT_FILTERS`, `matchesFilters`, `countActiveFilters`); implementation transcribed verbatim (verified field-by-field against brief lines 79-170).
+- Quality: imports use `.ts` extensions per repo convention (`../src/ui/store.ts`, `../src/data/types.ts`, `../data/types.ts`); logic is pure (no document/window) so node-env vitest is safe.
+- Discipline (YAGNI): no extra helpers, no wiring, no store state beyond what the brief specifies; `intensity` correctly left unevaluated per brief note rather than inventing semantics.
+- Testing: 5/5 new tests pass; full suite green; typecheck clean. Edge coverage beyond the brief (range/weekday/pace/hasRoute branches) is inherited verbatim from the specified implementation, not separately tested — acceptable since Task 1 scope pins the predicate and later tasks (4/5) will exercise it through the UI.
 
 ## Issues or concerns
-
-None. All errors resolved, typecheck passes, lint exits 0.
+- Brief typo fixed: Step 1 test line `expect(countActiveFilters({ ...DEFAULT_FILTERS, type: 'Run', minKm: 5 }).toBe(2);` is missing a closing paren (would be a parse error, not the expected import-resolution RED). Transcribed as `expect(countActiveFilters({ ...DEFAULT_FILTERS, type: 'Run', minKm: 5 })).toBe(2);`. Recommend fixing the brief/plan source.
+- No other concerns. Ready for Task 2.

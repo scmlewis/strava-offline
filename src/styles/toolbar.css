@@ -1,4 +1,7 @@
 /* ---- Toolbar (grouped ledger controls) ---- */
+.toolbar[hidden] {
+  display: none;
+}
 .toolbar {
   display: flex;
   flex-direction: column;

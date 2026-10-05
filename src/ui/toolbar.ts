@@ -35,32 +35,32 @@ export function renderToolbar(toolbar: HTMLElement, deps: ToolbarRenderDeps): vo
       <input id="t-search" data-testid="t-search" class="tb-input" type="search" placeholder="${t('search_placeholder')}" value="${esc(filters.search)}" />
       <label class="tb-ico" title="${t('type')}">${icon('tag')}<select id="t-type" data-testid="t-type"><option value="">${t('all_types')}</option>${types.map((ty) => `<option ${filters.type === ty ? 'selected' : ''}>${esc(ty)}</option>`).join('')}</select></label>
       <label class="tb-ico" title="${t('time_range')}">${icon('calendar')}<select id="t-range" data-testid="t-range">
-        <option value="all">${t('all_time')}</option>
-        <option value="90">${t('last_90')}</option>
-        <option value="180">${t('last_180')}</option>
-        <option value="365">${t('last_365')}</option>
+        <option value="all" ${filters.range === 'all' ? 'selected' : ''}>${t('all_time')}</option>
+        <option value="90" ${filters.range === '90' ? 'selected' : ''}>${t('last_90')}</option>
+        <option value="180" ${filters.range === '180' ? 'selected' : ''}>${t('last_180')}</option>
+        <option value="365" ${filters.range === '365' ? 'selected' : ''}>${t('last_365')}</option>
       </select></label>
       <label class="tb-ico" title="${t('weekday')}">${icon('week')}<select id="t-weekday" data-testid="t-weekday">
-        <option value="">${t('weekday_any')}</option>
-        <option value="weekday">${t('weekday_weekday')}</option>
-        <option value="weekend">${t('weekday_weekend')}</option>
-        <option value="6">${t('weekday_sat')}</option>
-        <option value="0">${t('weekday_sun')}</option>
-        <option value="1">${t('weekday_mon')}</option>
-        <option value="2">${t('weekday_tue')}</option>
-        <option value="3">${t('weekday_wed')}</option>
-        <option value="4">${t('weekday_thu')}</option>
-        <option value="5">${t('weekday_fri')}</option>
+        <option value="" ${filters.weekday === '' ? 'selected' : ''}>${t('weekday_any')}</option>
+        <option value="weekday" ${filters.weekday === 'weekday' ? 'selected' : ''}>${t('weekday_weekday')}</option>
+        <option value="weekend" ${filters.weekday === 'weekend' ? 'selected' : ''}>${t('weekday_weekend')}</option>
+        <option value="6" ${filters.weekday === '6' ? 'selected' : ''}>${t('weekday_sat')}</option>
+        <option value="0" ${filters.weekday === '0' ? 'selected' : ''}>${t('weekday_sun')}</option>
+        <option value="1" ${filters.weekday === '1' ? 'selected' : ''}>${t('weekday_mon')}</option>
+        <option value="2" ${filters.weekday === '2' ? 'selected' : ''}>${t('weekday_tue')}</option>
+        <option value="3" ${filters.weekday === '3' ? 'selected' : ''}>${t('weekday_wed')}</option>
+        <option value="4" ${filters.weekday === '4' ? 'selected' : ''}>${t('weekday_thu')}</option>
+        <option value="5" ${filters.weekday === '5' ? 'selected' : ''}>${t('weekday_fri')}</option>
       </select></label>
       <label class="tb-ico" title="${t('intensity')}">${icon('flame')}<select id="t-intensity" data-testid="t-intensity">
-        <option value="">${t('intensity_any')}</option>
-        <option value="easy">${t('intensity_easy')}</option>
-        <option value="hard">${t('intensity_hard')}</option>
+        <option value="" ${filters.intensity === '' ? 'selected' : ''}>${t('intensity_any')}</option>
+        <option value="easy" ${filters.intensity === 'easy' ? 'selected' : ''}>${t('intensity_easy')}</option>
+        <option value="hard" ${filters.intensity === 'hard' ? 'selected' : ''}>${t('intensity_hard')}</option>
       </select></label>
       <label class="tb-ico" title="${t('route')}">${icon('map')}<select id="t-route" data-testid="t-route">
-        <option value="">${t('route_any')}</option>
-        <option value="yes">${t('route_yes')}</option>
-        <option value="no">${t('route_no')}</option>
+        <option value="" ${filters.hasRoute === null ? 'selected' : ''}>${t('route_any')}</option>
+        <option value="yes" ${filters.hasRoute === true ? 'selected' : ''}>${t('route_yes')}</option>
+        <option value="no" ${filters.hasRoute === false ? 'selected' : ''}>${t('route_no')}</option>
       </select></label>
     </div>
     <div class="tb-row">

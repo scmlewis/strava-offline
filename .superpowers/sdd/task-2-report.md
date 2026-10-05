@@ -1,36 +1,36 @@
-# Task 2: Add Prettier — Report
+# Task 2 Report: Hash router — tab ↔ URL
 
-## What was implemented
+## What you implemented
+- Created `src/ui/router.ts` (verbatim from brief): `TABS` ordered `['overview','volume','load','zones','perf','log']`, `parseHash(hash)` (unknown/empty → `'overview'`), `toHash(tab)` (e.g. `'#/load'`). Imports `TabId` type from `./store.ts`.
+- Created `test/ui-router.test.ts` (verbatim from brief): 3 tests covering known-tab parsing, overview fallback, and serialization.
+- Pure addition; no wiring (deferred to Task 4 per brief).
 
-- Installed `prettier` as devDependency
-- Created `.prettierrc` with project-standard config (singleQuote, trailingComma: all, printWidth: 100, tabWidth: 2, semi: true)
-- Created `.prettierignore` excluding `dist/`, `node_modules/`, `*.md`, `package-lock.json`
-- Added `"format"` and `"format:check"` scripts to `package.json`
-- Ran `npm run format` to format the entire codebase
+## What you tested and test results
+- Focused test: `npx vitest run test/ui-router.test.ts` → 3 passed.
+- Typecheck: `npm run typecheck` (`tsc --noEmit`) → clean, no errors.
+- Did not run full suite (per task instructions: focused test + typecheck once).
 
-## What was tested and results
+## TDD Evidence
+### RED
+- Command: `npx vitest run test/ui-router.test.ts` (after writing test, before implementation)
+- Output: `FAIL test/ui-router.test.ts — Error: Cannot find module '../src/ui/router.ts' ... Caused by: Error: Failed to load url ../src/ui/router.ts ... Does the file exist?` — Test Files 1 failed, Tests: no tests.
+- Why expected: `src/ui/router.ts` did not exist yet; matches brief expectation ("Failed to resolve import ../src/ui/router.ts").
 
-| Command | Result |
-|---------|--------|
-| `npm run format` | ✅ Reformatted 24 files (most unchanged, confirming existing style was close) |
-| `npm run format:check` | ✅ `All matched files use Prettier code style!` |
-| `npm run lint` | ✅ Clean — 3 warnings only (`no-explicit-any` in fit.ts), no errors |
-| `npm run typecheck` | ✅ Clean pass |
-
-No ESLint conflicts — Prettier's formatting is compatible with existing ESLint rules.
+### GREEN
+- Command: `npx vitest run test/ui-router.test.ts && npm run typecheck` (after implementation)
+- Output: `✓ test/ui-router.test.ts (3 tests) 3ms` — Test Files 1 passed, Tests 3 passed; then `> strava-offline@0.1.0 typecheck > tsc --noEmit` with no errors.
+- Matches brief expectation: PASS (3 tests), typecheck clean.
 
 ## Files changed
-
-- `.prettierrc` (created)
-- `.prettierignore` (created)
-- `package.json` (added format/format:check scripts)
-- `package-lock.json` (updated)
-- `index.html`, `src/**/*.ts`, `src/**/*.css`, `test/**/*.ts` (formatted)
+- `src/ui/router.ts` (new, 16 lines)
+- `test/ui-router.test.ts` (new, 21 lines)
+- Commit: `771e6f4 feat: add hash router for dashboard tabs`
 
 ## Self-review findings
+- Completeness: all 5 brief steps done (test → RED → impl → GREEN+typecheck → commit with exact message). Code transcribed verbatim.
+- Quality: pure functions, no DOM access (node-env safe), `ReadonlySet` lookup, trims input. No extra API surface.
+- Discipline (YAGNI): no wiring, no hashchange listener, no extra exports — correctly left for Task 4.
+- Testing: brief's 3 tests are minimal but sufficient for this unit; no additional tests added per "transcribe verbatim" instruction.
 
-No issues. Prettier formatting was compatible with ESLint — no rule adjustments needed.
-
-## Commit
-
-`2fd9265` — `chore: add Prettier, format codebase`
+## Issues or concerns
+- None. No unexpected behavior; pre-existing untracked/modified files in workdir (progress.md, briefs, brainstorm/, plan doc) left untouched.
