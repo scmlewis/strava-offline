@@ -87,3 +87,46 @@
   switch, but worth a human glance at 768px when convenient.
 - Visual 1280/768/390 check skipped (headless-only environment); recommend a quick
   manual look on a real device, especially the 600px table-to-card transformation.
+
+## Fix wave
+
+Final whole-branch review findings, fixed per prescription (no improvisation; all
+names/signatures matched actual code).
+
+1. Keyboard `1-6` tab switch hash-sync (`src/main.ts:709-716`): replaced direct
+   `ctx.tab = TABS[num - 1]; ... refresh()` with `ctx.page = 0; selectTab(TABS[num - 1]);`
+   exactly as prescribed. `selectTab`/`TABS` confirmed already available
+   (`selectTab` is a local function, `TABS` imported from `./ui/router.ts:24`).
+   `Select-String -Path "src/main.ts" -Pattern "ctx\.tab ="` now returns only
+   `selectTab` (line 202), `syncTabFromHash` (211), boot init (733) — the ONLY
+   remaining direct mutations, as required.
+2. Deep-link E2E keyboard leg (`test/e2e/app.spec.ts`): added
+   `keyboard number switches tab via hash route` — from `/`, press `3`, assert URL
+   matches `/#\/load/` and `#nav .nav-tab.active` contains `Load`.
+3. Toolbar `selected` bindings (`src/ui/toolbar.ts`): added `selected` to `t-range`
+   (`filters.range`), `t-weekday` (`filters.weekday`), `t-intensity`
+   (`filters.intensity`), `t-route` (`filters.hasRoute === null/true/false` for
+   `''/yes/no`) following the existing `t-type`/`t-unit`/`t-weekstart` pattern.
+   No handler changes.
+4. Dead `hidden` on `#toolbar` (`src/styles/toolbar.css`): added
+   `.toolbar[hidden] { display: none; }` (one rule; attribute in `index.html` untouched).
+
+Untouched per instructions: `main.ts` <400-line plan target, spec toast
+aspiration, filter-branch unit coverage.
+
+### Test commands + outputs (all pass)
+
+- `npm run typecheck` — clean, no errors.
+- `npx vitest run` — 9 files, 75 tests, all passed.
+- `npm run build` — success (vite build + PWA precache 12 entries).
+- `npx playwright test test/e2e/app.spec.ts` — 6/6 passed (5 existing + 1 new
+  keyboard leg).
+- `npm run format:check` (after `Remove-Item -Recurse -Force test-results`) —
+  "All matched files use Prettier code style!"
+
+### Commit
+
+`37a53f9` — `fix: hash-sync keyboard nav, toolbar selected state, toolbar hidden rule`.
+Note: `git add -A` also swept in pre-existing untracked `.superpowers/brainstorm/`
+state files and dirty `.superpowers/sdd/*.md` files alongside the 4 intended
+source/test files; harmless but flagging for transparency.
