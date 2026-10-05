@@ -44,3 +44,5 @@ Starting HEAD: a67d5729510cb988967adf7da251df7ef6e63836
 - Task 4: complete (commits 2529f0e..0df9ad2, review clean — shell/nav/toolbar modules, hash routing, ids preserved. Verified myself: 74/74 unit, build clean, 5/5 E2E incl. deep-link, format clean)
 - Task 5: complete (commits 0df9ad2..3f60b62, review clean — 7 builders onto openModal, verbatim. Verified: unit 1/1, typecheck clean, '?' overlay E2E pass. Plan-mandated note: brief header 'zones Esc E2E' is dead text, steps define none)
 - Task 6: complete (commits 3f60b62..390a0ce, review clean — card() moved, additive 900/600 rules per human decision, a11y. Final verify: typecheck clean, lint 0 errors (3 pre-existing fit.ts warnings), format clean, 75/75 unit, 6/6 property, build clean, 5/5 E2E)
+- UI modernization fix wave: complete (commits 390a0ce..37a53f9 keyboard hash-sync + E2E leg + toolbar selected + hidden rule, 6/6 E2E; 59c82ab report; a9b8344 untracked brainstorm scratch + gitignored)
+- UI modernization plan: ALL 6 TASKS COMPLETE, final review With fixes -> fixed and verified
