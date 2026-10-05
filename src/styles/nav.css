@@ -57,3 +57,21 @@
 .nav-lbl {
   white-space: nowrap;
 }
+
+/* ---- Planned 900px breakpoint: sidebar layout at >=900px ----
+   Restates the base sidebar rules explicitly so the 900px switch point is
+   documented next to the component. No visual change (matches base). */
+@media (min-width: 900px) {
+  .nav {
+    position: sticky;
+    top: 76px;
+    flex-direction: column;
+    align-self: start;
+  }
+}
+
+/* ---- A11y: visible keyboard focus on nav tabs ---- */
+.nav-tab:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}

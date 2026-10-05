@@ -95,3 +95,97 @@
     left: 12px;
   }
 }
+
+/* ---- Planned breakpoints: 900px sidebar -> bottom tab-bar, 600px stacking ----
+   Added by Task 6 per the approved plan. The legacy 500px/760px rules above
+   are untouched; these later blocks win ties at overlapping widths. */
+@media (max-width: 899px) {
+  .layout {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  .nav {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    z-index: 40;
+    flex-direction: row;
+    justify-content: space-around;
+    gap: 2px;
+    background: var(--surface);
+    box-shadow: var(--elevation-2);
+    border-top: 1px solid var(--outline);
+    padding: 6px 4px;
+    margin: 0;
+  }
+  .nav-tab {
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 4px;
+    font-size: 0.62rem;
+    border-radius: var(--shape-full);
+    flex: 1;
+    min-height: 48px;
+  }
+  .nav-tab.active {
+    border-radius: var(--shape-full);
+  }
+  .nav-lbl {
+    white-space: nowrap;
+  }
+  #app {
+    padding-bottom: 84px;
+  }
+  .grid-2 {
+    grid-template-columns: 1fr;
+  }
+  .dashboard .chart-wrap {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 599px) {
+  .toolbar .tb-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .toolbar .tb-input,
+  .toolbar select,
+  .toolbar input {
+    width: 100%;
+  }
+  .dashboard .chart-wrap {
+    padding: 12px;
+  }
+  .cards {
+    grid-template-columns: 1fr;
+  }
+  .streak-row {
+    flex-direction: column;
+  }
+  /* Log tables -> card rows (no DOM change; pure display restyle). */
+  .act-table thead {
+    display: none;
+  }
+  .act-table,
+  .act-table tbody,
+  .act-table tr,
+  .act-table td {
+    display: block;
+    width: 100%;
+  }
+  .act-table tr {
+    border: 1px solid var(--outline);
+    border-radius: var(--shape-sm);
+    margin-bottom: 8px;
+    padding: 4px 8px;
+    background: var(--surface-container-low);
+  }
+  .act-table td {
+    border-bottom: none;
+    padding: 4px 2px;
+    white-space: normal;
+  }
+}

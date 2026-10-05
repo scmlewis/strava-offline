@@ -67,6 +67,7 @@ export interface DashCtx {
 }
 
 import { esc, toLocalDate } from '../utils';
+import { card } from '../ui/cards.ts';
 
 // ---- unit-aware formatters ----
 const KM_PER_MI = 1.60934;
@@ -114,20 +115,6 @@ function fmtTSS(tss: number | null): string {
 }
 
 // ---- shared building blocks ----
-function card(
-  label: string,
-  value: string,
-  sub?: string,
-  accent?: string,
-  small?: boolean,
-): string {
-  const style = accent ? ` style="--card-accent:${accent}"` : '';
-  return `<div class="card${small ? ' card-sm' : ''}"${style}>
-    <div class="card-label">${label}</div>
-    <div class="card-value">${value}</div>
-    ${sub ? `<div class="card-sub">${sub}</div>` : ''}
-  </div>`;
-}
 
 function plotOpts(series: uPlot.Series[], height = 220, yValues?: number[]): uPlot.Options {
   // auto y-range with padding so lines never clip the plot edges.

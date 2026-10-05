@@ -24,7 +24,7 @@ const NAV_LABEL_KEYS: Record<TabId, string> = {
 export function buildNav(nav: HTMLElement, active: TabId, onSelect: (t: TabId) => void): void {
   nav.innerHTML = TABS.map(
     (id) =>
-      `<button class="nav-tab${active === id ? ' active' : ''}" data-tab="${id}" data-testid="nav-tab-${id}">
+      `<button class="nav-tab${active === id ? ' active' : ''}" data-tab="${id}" data-testid="nav-tab-${id}"${active === id ? ' aria-current="page"' : ''}>
       <span class="nav-ico">${icon(NAV_ICONS[id], 20)}</span><span class="nav-lbl">${t(NAV_LABEL_KEYS[id])}</span>
     </button>`,
   ).join('');
