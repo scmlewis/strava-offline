@@ -1,7 +1,6 @@
 // Enhanced toolbar with modern UI patterns
-import { t } from '../i18n.ts';
 
-export function buildToolbarModern(toolbar: HTMLElement, filters: any): string {
+export function buildToolbarModern(filters: any): string {
   const rangeOptions = [
     { value: 'all', label: 'Range All' },
     { value: '90', label: 'Last 90 days' },
@@ -75,7 +74,7 @@ export function buildToolbarModern(toolbar: HTMLElement, filters: any): string {
   `;
 }
 
-export function buildToolbarCompact(toolbar: HTMLElement, activeFilterCount: number): string {
+export function buildToolbarCompact(activeFilterCount: number): string {
   const activeFiltersIndicator = activeFilterCount > 0 ? `
     <div class="compact-filter-badge">
       <span class="badge-dot"></span>
@@ -106,7 +105,7 @@ export function buildToolbarCompact(toolbar: HTMLElement, activeFilterCount: num
   `;
 }
 
-export function buildToolbarAdvanced(toolbar: HTMLElement, advancedOptions: any): string {
+export function buildToolbarAdvanced(advancedOptions: any): string {
   const { showDateRange, showIntensity, showType, showHasRoute } = advancedOptions;
   
   return `

@@ -1,5 +1,4 @@
 // Loading and empty state components
-import { t } from '../i18n.ts';
 
 export function loadingSpinner(size: 'sm' | 'md' | 'lg' = 'md'): string {
   const sizeClasses = {
@@ -93,7 +92,6 @@ export function errorState(
 export function toastNotification(
   message: string,
   type: 'success' | 'error' | 'warning' | 'info' = 'info',
-  duration: number = 5000,
 ): string {
   const typeClasses = {
     success: 'border-green-500 bg-green-50 dark:bg-green-950 text-green-800 dark:text-green-200',

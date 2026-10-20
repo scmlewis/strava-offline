@@ -1,5 +1,4 @@
 // Enhanced UI components using 21st.dev patterns
-import { t } from '../i18n.ts';
 import { icon, type IconName } from '../icons.ts';
 
 export function cardStat(

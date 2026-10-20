@@ -1,7 +1,6 @@
 // Enhanced navigation using modern patterns
 import { TABS } from './router.ts';
 import type { TabId } from './store.ts';
-import { t } from '../i18n.ts';
 import { icon, type IconName } from '../icons.ts';
 
 const NAV_ICONS: Record<TabId, IconName> = {
@@ -26,7 +25,6 @@ export function buildNavModern(nav: HTMLElement, active: TabId, onSelect: (t: Ta
   const navItems = TABS.map((id) => {
     const isActive = active === id;
     const iconName = NAV_ICONS[id];
-    const label = t(NAV_LABELS[id]);
     
     return `
       <button 
@@ -39,7 +37,7 @@ export function buildNavModern(nav: HTMLElement, active: TabId, onSelect: (t: Ta
           ${icon(iconName, 20)}
         </span>
         <span class="nav-tab-label ${isActive ? 'nav-tab-label-active' : ''}">
-          ${label}
+          ${NAV_LABELS[id]}
         </span>
       </button>
     `;
@@ -47,16 +45,18 @@ export function buildNavModern(nav: HTMLElement, active: TabId, onSelect: (t: Ta
   
   nav.innerHTML = navItems;
   
-  nav.querySelectorAll<HTMLButtonElement>('.nav-tab-modern').forEach((button) => {
+  nav.querySelectorAll('.nav-tab-modern').forEach((btn) => {
+    const button = btn as HTMLButtonElement;
     button.addEventListener('click', () => {
       const tabId = button.dataset.tab as TabId;
       onSelect(tabId);
       
       // Update active state
       nav.querySelectorAll('.nav-tab-modern').forEach(btn => {
-        const btnTabId = btn.dataset.tab as TabId;
+        const button = btn as HTMLButtonElement;
+        const btnTabId = button.dataset.tab as TabId;
         const isActive = btnTabId === tabId;
-        btn.className = `nav-tab-modern ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}`;
+        button.className = `nav-tab-modern ${isActive ? 'nav-tab-active' : 'nav-tab-inactive'}`;
       });
     });
   });
@@ -72,8 +72,8 @@ export function buildNavCompact(nav: HTMLElement, active: TabId, onSelect: (t: T
         class="nav-tab-compact ${isActive ? 'nav-tab-compact-active' : ''}"
         data-tab="${id}"
         data-testid="nav-tab-${id}"
-        aria-label="${t(NAV_LABELS[id])}"
-        title="${t(NAV_LABELS[id])}"
+        aria-label="${NAV_LABELS[id]}"
+        title="${NAV_LABELS[id]}"
       >
         <span class="nav-tab-icon-compact ${isActive ? 'nav-tab-icon-compact-active' : ''}">
           ${icon(iconName, 24)}
@@ -84,7 +84,8 @@ export function buildNavCompact(nav: HTMLElement, active: TabId, onSelect: (t: T
   
   nav.innerHTML = navItems;
   
-  nav.querySelectorAll<HTMLButtonElement>('.nav-tab-compact').forEach((button) => {
+  nav.querySelectorAll('.nav-tab-compact').forEach((btn) => {
+    const button = btn as HTMLButtonElement;
     button.addEventListener('click', () => {
       const tabId = button.dataset.tab as TabId;
       onSelect(tabId);
@@ -96,7 +97,7 @@ export function buildNavWithBadges(nav: HTMLElement, active: TabId, onSelect: (t
   const navItems = TABS.map((id) => {
     const isActive = active === id;
     const iconName = NAV_ICONS[id];
-    const label = t(NAV_LABELS[id]);
+    
     const badgeCount = badgeCounts?.[id];
     
     const badgeHtml = badgeCount !== undefined ? `
@@ -114,7 +115,7 @@ export function buildNavWithBadges(nav: HTMLElement, active: TabId, onSelect: (t
           ${icon(iconName, 20)}
         </span>
         <span class="nav-tab-label-with-badge ${isActive ? 'nav-tab-label-with-badge-active' : ''}">
-          ${label}
+          ${NAV_LABELS[id]}
         </span>
         ${badgeHtml}
       </button>
@@ -123,7 +124,8 @@ export function buildNavWithBadges(nav: HTMLElement, active: TabId, onSelect: (t
   
   nav.innerHTML = navItems;
   
-  nav.querySelectorAll<HTMLButtonElement>('.nav-tab-with-badge').forEach((button) => {
+  nav.querySelectorAll('.nav-tab-with-badge').forEach((btn) => {
+    const button = btn as HTMLButtonElement;
     button.addEventListener('click', () => {
       const tabId = button.dataset.tab as TabId;
       onSelect(tabId);
