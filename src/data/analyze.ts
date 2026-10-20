@@ -2,7 +2,7 @@ import type { Activity, ZonesConfig } from './types';
 import { zoneForHr, intensityForHr } from './zones';
 import { toLocalDate, todayLocal, yesterdayLocal } from '../utils';
 
-function mondayOf(ts: number): string {
+export function mondayOf(ts: number): string {
   const d = new Date(ts);
   const day = (d.getDay() + 6) % 7; // Mon=0 (local)
   d.setDate(d.getDate() - day);
