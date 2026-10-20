@@ -68,6 +68,7 @@ export interface DashCtx {
 
 import { esc, toLocalDate } from '../utils';
 import { card } from '../ui/cards.ts';
+import { coachNote } from './coach.ts';
 
 // ---- unit-aware formatters ----
 const KM_PER_MI = 1.60934;
@@ -184,9 +185,28 @@ function wrapPair(a: HTMLElement | null, b: HTMLElement | null): HTMLElement {
 }
 
 // ---- per-tab renderers ----
+function renderCoachNote(acts: Activity[]): HTMLElement {
+  const el = document.createElement('div');
+  el.className = 'chart-wrap coach-note';
+  const out = coachNote(acts, currentCfg, goals, units);
+  if ('empty' in out) {
+    el.innerHTML = `<p class="coach-kicker">COACH'S NOTE</p>
+      <h3 class="coach-headline">Too early to read.</h3>
+      <p class="coach-body">${esc(out.empty)}</p>`;
+    return el;
+  }
+  el.innerHTML = `<p class="coach-kicker">WEEK ${out.week} · COACH'S NOTE</p>
+    <h3 class="coach-headline">${esc(out.headline)}</h3>
+    <p class="coach-body">${esc(out.body)}</p>
+    ${out.focus ? `<p class="coach-focus">Focus: ${esc(out.focus)}</p>` : ''}
+    ${out.secondary ? `<p class="coach-secondary">${esc(out.secondary)}</p>` : ''}`;
+  return el;
+}
+
 function renderOverview(acts: Activity[]): HTMLElement {
   const frag = document.createElement('div');
   frag.className = 'stack';
+  frag.appendChild(renderCoachNote(acts));
   frag.appendChild(renderCards(acts));
   frag.appendChild(renderHeatmap(acts));
   frag.appendChild(renderStreakBar(acts));

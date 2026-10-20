@@ -98,6 +98,39 @@
   display: inline-block;
 }
 
+/* ---- Coach's Note ---- */
+.coach-note .coach-kicker {
+  margin: 0 0 6px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+.coach-note .coach-headline {
+  margin: 0 0 6px;
+  font-size: 1.05rem;
+  font-weight: 650;
+}
+.coach-note .coach-body {
+  margin: 0 0 8px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  max-width: 65ch;
+}
+.coach-note .coach-focus {
+  margin: 0;
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+.coach-note .coach-secondary {
+  margin: 8px 0 0;
+  font-size: 0.84rem;
+  color: var(--muted);
+}
+
 /* ---- Heatmap with month axis ---- */
 .hm-wrap {
   overflow-x: auto;
