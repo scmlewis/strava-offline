@@ -106,7 +106,7 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--muted);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-family: var(--font-mono);
 }
 .coach-note .coach-headline {
   margin: 0 0 6px;
