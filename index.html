@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0c0f14" />
+    <meta
+      name="description"
+      content="Analyze your Strava running data offline. Local-first PWA — your data stays on your device."
+    />
+    <meta property="og:title" content="Strava Offline Analyzer" />
+    <meta
+      property="og:description"
+      content="Analyze your Strava running data offline. Training load, HR zones, race predictions, and more."
+    />
+    <meta property="og:type" content="website" />
+    <title>Strava Offline Analyzer</title>
+    <script type="module" crossorigin src="./assets/index-D1H2hg-n.js"></script>
+    <link rel="stylesheet" crossorigin href="./assets/index-Dkob5U7I.css">
+  <link rel="manifest" href="./manifest.webmanifest"><script id="vite-plugin-pwa:register-sw" src="./registerSW.js"></script></head>
+  <body>
+    <a href="#dashboard" class="skip-link">Skip to content</a>
+    <div id="app">
+      <header class="topbar">
+        <div class="brand">
+          <span class="brand-mark" aria-hidden="true">
+            <svg width="18" height="18" viewBox="0 0 64 64" fill="none">
+              <polyline
+                points="8,44 20,30 30,38 42,18 56,26"
+                stroke="#34d399"
+                stroke-width="7"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+              <circle cx="42" cy="18" r="6" fill="#fbbf24" />
+            </svg>
+          </span>
+          <h1 id="app-title">Strava <span class="middot">·</span> Offline Analyzer</h1>
+        </div>
+        <p class="sub" id="app-sub">Local-first PWA · your data stays on your device</p>
+        <details class="menu" id="topbar-menu" data-testid="topbar-menu">
+          <summary class="menu-summary" data-testid="topbar-menu-toggle">Menu</summary>
+          <div class="menu-body" id="topbar-actions" data-testid="topbar-actions"></div>
+        </details>
+      </header>
+
+      <section id="dropzone" class="dropzone" data-testid="dropzone">
+        <div class="dz-full">
+          <p class="dz-kicker">Local training ledger — no upload, no account</p>
+          <h2 id="dropzone-title">Drop your Strava export here</h2>
+          <p id="dropzone-sub">or</p>
+          <button id="pick-btn" type="button">Choose file</button>
+          <input id="file-input" type="file" accept=".csv,.zip" multiple hidden />
+          <p class="hint">activities.csv or the full export .zip — parsed on your device</p>
+          <div class="dropzone-features">
+            <div class="feature">
+              <span class="feature-key">01</span> Training load (TSS/CTL/ATL/TSB)
+            </div>
+            <div class="feature">
+              <span class="feature-key">02</span> Personal records &amp; race predictions
+            </div>
+            <div class="feature">
+              <span class="feature-key">03</span> HR zone analysis &amp; charts
+            </div>
+            <div class="feature"><span class="feature-key">04</span> Route mini-maps</div>
+            <div class="feature feature-wide">
+              <span class="feature-key">05</span> 100% offline — data stays on your device
+            </div>
+          </div>
+        </div>
+        <div class="dz-mini hidden">
+          <span
+            ><svg
+              class="icon"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="1.75"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M22 12.5h-6.5L13.5 16H10.5l-2-3.5H2" />
+              <path d="M4.5 5h15l3 7.5v5a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2v-5z" />
+            </svg>
+            Drop or
+            <button id="pick-btn-mini" type="button" class="link-btn">choose file</button> to add
+            activities</span
+          >
+        </div>
+      </section>
+
+      <div id="status" class="status" hidden aria-live="polite"></div>
+      <div id="progress" class="progress" hidden>
+        <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
+        <span id="progress-label" class="progress-label"></span>
+      </div>
+
+      <div class="layout">
+        <nav id="nav" class="nav" aria-label="Main navigation" data-testid="nav"></nav>
+        <div class="content">
+          <div id="toolbar" class="toolbar" data-testid="toolbar" hidden></div>
+          <main id="dashboard" class="dashboard" data-testid="dashboard" hidden></main>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
