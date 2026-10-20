@@ -133,9 +133,7 @@ function ruleDrift(inp: CoachInputs): Fired | null {
 }
 
 function ruleMomentum(inp: CoachInputs): Fired | null {
-  const milestone = [7, 30, 100].includes(inp.streak.current)
-    ? inp.streak.current
-    : null;
+  const milestone = [7, 30, 100].includes(inp.streak.current) ? inp.streak.current : null;
   if (milestone != null) {
     return {
       rank: 4,
@@ -146,7 +144,11 @@ function ruleMomentum(inp: CoachInputs): Fired | null {
   if (inp.weekly.length >= 2) {
     const last = inp.weekly[inp.weekly.length - 1];
     const prev = inp.weekly.slice(Math.max(0, inp.weekly.length - 13), inp.weekly.length - 1);
-    if (last.distanceKm > 0 && prev.length > 0 && last.distanceKm > Math.max(...prev.map((w) => w.distanceKm))) {
+    if (
+      last.distanceKm > 0 &&
+      prev.length > 0 &&
+      last.distanceKm > Math.max(...prev.map((w) => w.distanceKm))
+    ) {
       // A big week still short of the weekly goal lets rule 5 give the honest read.
       const shortOfGoal = inp.goalWeeklyKm != null && last.distanceKm < inp.goalWeeklyKm;
       if (shortOfGoal) return null;
@@ -183,9 +185,7 @@ function ruleGoal(inp: CoachInputs): Fired | null {
 function ruleBaseline(inp: CoachInputs): Fired {
   const ctl = inp.load.length ? Math.round(inp.load[inp.load.length - 1].ctl) : 0;
   const recent = inp.weekly.slice(-4);
-  const avgKm = recent.length
-    ? recent.reduce((s, w) => s + w.distanceKm, 0) / recent.length
-    : 0;
+  const avgKm = recent.length ? recent.reduce((s, w) => s + w.distanceKm, 0) / recent.length : 0;
   return {
     rank: 6,
     headline: 'Steady work.',
@@ -193,14 +193,7 @@ function ruleBaseline(inp: CoachInputs): Fired {
   };
 }
 
-const RULES = [
-  ruleFatigue,
-  ruleFresh,
-  ruleDrift,
-  ruleMomentum,
-  ruleGoal,
-  ruleBaseline,
-];
+const RULES = [ruleFatigue, ruleFresh, ruleDrift, ruleMomentum, ruleGoal, ruleBaseline];
 
 function honesty(inp: CoachInputs): CoachEmpty | null {
   if (inp.weekly.length < 3) {
@@ -246,11 +239,14 @@ export function coachNote(
   const weekly = computeWeeklyVolume(acts);
   const easy = computeEasy(acts, cfg, goals.easyZones);
   const streak = computeStreaks(acts);
-  const lastDate = acts.length ? acts.map((a) => a.date).sort().pop()! : null;
-  const thisMonday = mondayOf(Date.now());
-  const lastActivityMonday = lastDate
-    ? mondayOf(new Date(lastDate + 'T00:00:00').getTime())
+  const lastDate = acts.length
+    ? acts
+        .map((a) => a.date)
+        .sort()
+        .pop()!
     : null;
+  const thisMonday = mondayOf(Date.now());
+  const lastActivityMonday = lastDate ? mondayOf(new Date(lastDate + 'T00:00:00').getTime()) : null;
   return pickNote({
     load,
     weekly,

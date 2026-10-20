@@ -119,9 +119,7 @@ describe('pickNote rule ranking', () => {
     if (!('empty' in out)) expect(out.headline).toBe('7-day streak.');
   });
   it('rule 5 goal behind: last full week under target', () => {
-    const out = pickNote(
-      inp({ load: load(0), weekly: weeks([30, 32, 30, 38]), goalWeeklyKm: 40 }),
-    );
+    const out = pickNote(inp({ load: load(0), weekly: weeks([30, 32, 30, 38]), goalWeeklyKm: 40 }));
     if (!('empty' in out)) {
       expect(out.headline).toBe('Behind on the weekly.');
       expect(out.body).toContain('30.0 km');
@@ -129,9 +127,7 @@ describe('pickNote rule ranking', () => {
     }
   });
   it('rule 5 goal on-pace: last full week >= 90% of target', () => {
-    const out = pickNote(
-      inp({ load: load(0), weekly: weeks([30, 32, 38, 10]), goalWeeklyKm: 40 }),
-    );
+    const out = pickNote(inp({ load: load(0), weekly: weeks([30, 32, 38, 10]), goalWeeklyKm: 40 }));
     if (!('empty' in out)) expect(out.headline).toBe('On pace.');
   });
   it('rule 6 quiet baseline when nothing else fires', () => {
