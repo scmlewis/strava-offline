@@ -1,0 +1,415 @@
+/* Modern card enhancements */
+.card-modern {
+  @apply relative overflow-hidden rounded-xl border border-outline-variant bg-surface-container shadow-m3-1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-modern:hover {
+  @apply shadow-m3-3 transform -translate-y-1;
+}
+
+.card-modern.hover-lift {
+  transform: translateY(0);
+}
+
+.card-modern.hover-lift:hover {
+  @apply shadow-m3-4 transform -translate-y-2;
+}
+
+card-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--card-accent, var(--primary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+card-modern:hover::before {
+  opacity: 1;
+}
+
+card-modern .card-header {
+  @apply flex items-center justify-between p-4 pb-2;
+}
+
+card-modern .card-value-group {
+  @apply p-4 pt-2;
+}
+
+card-modern .card-value-main {
+  @apply text-2xl font-bold text-on-surface;
+}
+
+card-modern .card-trend {
+  @apply text-xs font-medium px-2 py-1 rounded-full bg-surface-container-high;
+}
+
+/* Modern stat cards */
+.stat-card {
+  @apply relative rounded-xl border border-outline-variant bg-surface-container p-5 shadow-m3-1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  @apply shadow-m3-3 transform -translate-y-1;
+}
+
+.stat-card::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 4px;
+  height: 100%;
+  background: var(--stat-accent, var(--primary));
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.stat-card:hover::after {
+  opacity: 1;
+}
+
+.stat-card .stat-icon {
+  @apply w-12 h-12 rounded-lg bg-primary-container flex items-center justify-center mb-3;
+}
+
+.stat-card .stat-value {
+  @apply font-bold text-on-surface;
+}
+
+.stat-card .stat-trend {
+  @apply inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium mt-2;
+}
+
+.stat-card .trend-up {
+  @apply bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-400;
+}
+
+.stat-card .trend-down {
+  @apply bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-400;
+}
+
+/* Modern metric cards */
+.metric-card {
+  @apply rounded-xl border border-outline-variant bg-surface-container p-5 shadow-m3-1;
+}
+
+.metric-card .metric-header {
+  @apply flex items-center justify-between mb-3;
+}
+
+.metric-card .metric-title {
+  @apply text-sm font-medium text-muted;
+}
+
+.metric-card .metric-color-indicator {
+  @apply w-3 h-3 rounded-full;
+}
+
+.metric-card .metric-color-indicator-primary {
+  @apply bg-primary;
+}
+
+.metric-card .metric-color-indicator-secondary {
+  @apply bg-secondary;
+}
+
+.metric-card .metric-color-indicator-accent {
+  @apply bg-accent;
+}
+
+.metric-card .metric-color-indicator-warning {
+  @apply bg-warn;
+}
+
+.metric-card .metric-color-indicator-danger {
+  @apply bg-danger;
+}
+
+.metric-card .metric-value {
+  @apply font-bold text-on-surface;
+}
+
+.metric-card .metric-unit {
+  @apply font-normal text-muted;
+}
+
+.metric-card .metric-bar-container {
+  @apply mt-4 h-2 bg-surface-container-high rounded-full overflow-hidden;
+}
+
+.metric-card .metric-bar-fill {
+  @apply h-full rounded-full transition-all duration-500 ease-out;
+}
+
+.metric-card .metric-bar-fill-primary {
+  @apply bg-primary;
+}
+
+.metric-card .metric-bar-fill-secondary {
+  @apply bg-secondary;
+}
+
+.metric-card .metric-bar-fill-accent {
+  @apply bg-accent;
+}
+
+.metric-card .metric-bar-fill-warning {
+  @apply bg-warn;
+}
+
+.metric-card .metric-bar-fill-danger {
+  @apply bg-danger;
+}
+
+/* Modern insight cards */
+.insight-card {
+  @apply rounded-xl border border-outline-variant bg-surface-container p-5 shadow-m3-1;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.insight-card:hover {
+  @apply shadow-m3-3 transform -translate-y-1;
+}
+
+.insight-card .insight-header {
+  @apply mb-3;
+}
+
+.insight-card .insight-title {
+  @apply font-semibold text-on-surface;
+}
+
+.insight-card .insight-value {
+  @apply font-bold text-on-surface;
+}
+
+.insight-card .insight-confidence {
+  @apply mt-4 pt-4 border-t border-outline-variant;
+}
+
+.insight-card .confidence-bar {
+  @apply h-2 bg-surface-container-high rounded-full overflow-hidden;
+}
+
+.insight-card .confidence-fill {
+  @apply h-full bg-accent rounded-full transition-all duration-500 ease-out;
+}
+
+.insight-card .insight-list {
+  @apply mt-3;
+}
+
+.insight-card .insight-list-title {
+  @apply font-medium mb-2;
+}
+
+.insight-card .insight-items {
+  @apply space-y-1;
+}
+
+.insight-card .insight-item {
+  @apply flex items-start;
+}
+
+.insight-card .insight-bullet {
+  @apply w-1 h-1 bg-accent rounded-full mt-1 mr-2 flex-shrink-0;
+}
+
+/* Modern buttons */
+.btn {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-lg font-medium transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+.btn-primary {
+  @apply bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container focus:ring-primary shadow-m3-1 hover:shadow-m3-2;
+}
+
+.btn-secondary {
+  @apply bg-secondary text-on-secondary hover:bg-secondary/80 focus:ring-secondary;
+}
+
+.btn-ghost {
+  @apply text-primary hover:bg-primary-container/50 focus:ring-primary;
+}
+
+.btn-icon-only {
+  @apply p-2 rounded-lg hover:bg-surface-container-high focus:ring-2;
+}
+
+.btn-icon {
+  @apply mr-2;
+}
+
+.btn-text {
+  @apply ml-2;
+}
+
+/* Modern forms */
+.input-wrapper {
+  @apply relative;
+}
+
+.filter-input {
+  @apply w-full px-3 py-2 border border-outline rounded-lg bg-surface text-on-surface placeholder-muted focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all;
+}
+
+.select-wrapper {
+  @apply relative;
+}
+
+.filter-select {
+  @apply w-full px-3 py-2 border border-outline rounded-lg bg-surface text-on-surface focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all appearance-none;
+}
+
+/* Modern animations */
+@layer utilities {
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elevation-3);
+  }
+  
+  .card-interactive {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-interactive:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.15);
+  }
+  
+  .nav-tab-active {
+    @apply bg-primary-container text-on-primary-container;
+  }
+  
+  .nav-tab-inactive {
+    @apply text-muted hover:bg-surface-container-high;
+  }
+  
+  .nav-tab-icon-active {
+    @apply text-primary;
+  }
+  
+  .nav-tab-label-active {
+    @apply font-semibold text-primary;
+  }
+  
+  .nav-tab-compact-active {
+    @apply bg-primary/20 text-primary;
+  }
+  
+  .nav-tab-icon-compact-active {
+    @apply text-primary;
+  }
+  
+  .nav-badge {
+    @apply ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-muted;
+  }
+  
+  .nav-badge-active {
+    @apply bg-primary/20 text-primary;
+  }
+  
+  .nav-tab-with-badge-active {
+    @apply bg-primary-container/50;
+  }
+  
+  .nav-tab-icon-with-badge-active {
+    @apply text-primary;
+  }
+  
+  .nav-tab-label-with-badge-active {
+    @apply font-semibold text-primary;
+  }
+  
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+/* Typography improvements */
+@layer base {
+  html {
+    font-family: 'Geist', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang HK', 'Microsoft YaHei', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply text-base text-on-surface bg-surface-dim;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-on-surface tracking-tight;
+  }
+  
+  /* Improved text hierarchy */
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+    letter-spacing: -0.025em;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold;
+    letter-spacing: -0.025em;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold;
+    letter-spacing: -0.015em;
+  }
+  
+  p {
+    @apply text-base md:text-lg leading-relaxed;
+    max-width: 65ch;
+  }
+}
+
+/* Layout improvements */
+@layer components {
+  .container-enhanced {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .content-layout {
+    @apply grid grid-cols-1 lg:grid-cols-4 gap-6;
+  }
+  
+  .sidebar-enhanced {
+    @apply lg:col-span-1;
+  }
+  
+  .main-content-enhanced {
+    @apply lg:col-span-3;
+  }
+  
+  .card-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+  
+  .stats-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+}

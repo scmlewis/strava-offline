@@ -1,0 +1,142 @@
+/* Enhanced animations and transitions */
+@layer utilities {
+  .hover-lift {
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elevation-3);
+  }
+  
+  .card-interactive {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .card-interactive:hover {
+    border-color: var(--primary);
+    box-shadow: 0 4px 12px rgba(52, 211, 153, 0.15);
+  }
+  
+  .nav-tab-active {
+    @apply bg-primary-container text-on-primary-container;
+  }
+  
+  .nav-tab-inactive {
+    @apply text-muted hover:bg-surface-container-high;
+  }
+  
+  .nav-tab-icon-active {
+    @apply text-primary;
+  }
+  
+  .nav-tab-label-active {
+    @apply font-semibold text-primary;
+  }
+  
+  .nav-tab-compact-active {
+    @apply bg-primary/20 text-primary;
+  }
+  
+  .nav-tab-icon-compact-active {
+    @apply text-primary;
+  }
+  
+  .nav-badge {
+    @apply ml-2 px-2 py-0.5 rounded-full text-xs font-medium bg-surface-container-high text-muted;
+  }
+  
+  .nav-badge-active {
+    @apply bg-primary/20 text-primary;
+  }
+  
+  .nav-tab-with-badge-active {
+    @apply bg-primary-container/50;
+  }
+  
+  .nav-tab-icon-with-badge-active {
+    @apply text-primary;
+  }
+  
+  .nav-tab-label-with-badge-active {
+    @apply font-semibold text-primary;
+  }
+  
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+/* Typography improvements */
+@layer base {
+  html {
+    font-family: 'Geist', ui-sans-serif, -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang HK', 'Microsoft YaHei', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  
+  body {
+    @apply text-base text-on-surface bg-surface-dim;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-bold text-on-surface tracking-tight;
+  }
+  
+  /* Improved text hierarchy */
+  h1 {
+    @apply text-4xl md:text-5xl lg:text-6xl font-bold;
+    letter-spacing: -0.025em;
+  }
+  
+  h2 {
+    @apply text-3xl md:text-4xl lg:text-5xl font-bold;
+    letter-spacing: -0.025em;
+  }
+  
+  h3 {
+    @apply text-2xl md:text-3xl lg:text-4xl font-semibold;
+    letter-spacing: -0.015em;
+  }
+  
+  p {
+    @apply text-base md:text-lg leading-relaxed;
+    max-width: 65ch;
+  }
+}
+
+/* Layout improvements */
+@layer components {
+  .container-enhanced {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  
+  .content-layout {
+    @apply grid grid-cols-1 lg:grid-cols-4 gap-6;
+  }
+  
+  .sidebar-enhanced {
+    @apply lg:col-span-1;
+  }
+  
+  .main-content-enhanced {
+    @apply lg:col-span-3;
+  }
+  
+  .card-grid {
+    @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4;
+  }
+  
+  .stats-grid {
+    @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
+  }
+}

@@ -1,3 +1,13 @@
+/* Tailwind base styles - processed by PostCSS */
+@import 'tailwindcss/base';
+
+/* Tailwind component styles - processed by PostCSS */
+@import 'tailwindcss/components';
+
+/* Tailwind utility styles - processed by PostCSS */
+@import 'tailwindcss/utilities';
+
+/* Custom design system extensions - Material 3 tokens + modern enhancements */
 @import './styles/tokens.css';
 @import './styles/shell.css';
 @import './styles/nav.css';
@@ -5,3 +15,11 @@
 @import './styles/cards.css';
 @import './styles/modals.css';
 @import './styles/responsive.css';
+
+/* Modern component styles */
+@import './styles/modern-cards.css';
+@import './styles/modern-nav.css';
+@import './styles/modern-toolbar.css';
+@import './styles/modern-buttons.css';
+@import './styles/modern-forms.css';
+@import './styles/modern-animations.css';
