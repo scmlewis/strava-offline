@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_POINT_RADIUS_KM,
   MIN_SPAN_DEG,
+  applyHeatRamp,
   computeHeatBounds,
   haversineKm,
+  heatQuantile,
   lonLatToWorld,
   sanitizeRoutes,
   sportTypes,
@@ -157,5 +159,43 @@ describe('sportTypes', () => {
       { type: 'Ride', count: 1 },
       { type: 'Unknown', count: 1 },
     ]);
+  });
+});
+
+describe('heatQuantile', () => {
+  it('ignores zero alpha and returns the requested quantile', () => {
+    const alpha = new Uint8Array([0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
+    expect(heatQuantile(alpha, 0.5)).toBe(50);
+    expect(heatQuantile(alpha, 1)).toBe(100);
+  });
+
+  it('returns 0 when every pixel is transparent', () => {
+    expect(heatQuantile(new Uint8Array([0, 0, 0]), 0.98)).toBe(0);
+  });
+});
+
+describe('applyHeatRamp', () => {
+  it('leaves transparent pixels transparent', () => {
+    const px = new Uint8ClampedArray([255, 255, 255, 0]);
+    applyHeatRamp(px, 255);
+    expect(px[3]).toBe(0);
+  });
+
+  it('maps full heat to the hot end of the ramp', () => {
+    const px = new Uint8ClampedArray([255, 255, 255, 255]);
+    applyHeatRamp(px, 255);
+    expect([px[0], px[1], px[2], px[3]]).toEqual([255, 246, 200, 255]);
+  });
+
+  it('clamps values above the hot level and brightens monotonically', () => {
+    const low = new Uint8ClampedArray([255, 255, 255, 20]);
+    const high = new Uint8ClampedArray([255, 255, 255, 120]);
+    const over = new Uint8ClampedArray([255, 255, 255, 255]);
+    applyHeatRamp(low, 200);
+    applyHeatRamp(high, 200);
+    applyHeatRamp(over, 100);
+    const brightness = (v: Uint8ClampedArray) => v[0] + v[1] + v[2] + v[3];
+    expect(brightness(high)).toBeGreaterThan(brightness(low));
+    expect([over[0], over[1], over[2], over[3]]).toEqual([255, 246, 200, 255]);
   });
 });

@@ -6,6 +6,29 @@ export const MAX_POINT_RADIUS_KM = 100;
 /** Bounds are expanded to at least this many degrees per axis so tiny routes stay visible. */
 export const MIN_SPAN_DEG = 0.002;
 
+/** Alpha quantile used as the top of the heat scale so a few dense pixels cannot wash out the map. */
+export const HOT_QUANTILE = 0.98;
+
+/** Gamma applied to normalised heat, lifting mid-density trails away from the cold end. */
+export const GAMMA = 0.75;
+
+/** Longest raster edge, capping buffer size on very large viewports. */
+export const MAX_RASTER = 2048;
+
+/** `localStorage` key for the persisted heatmap preferences. */
+export const HEATMAP_PREFS_KEY = 'heatmapPrefs';
+
+/** Colour stops for the heat overlay, ascending from cold (0) to hot (1). */
+export const RAMP: Array<{ at: number; rgba: [number, number, number, number] }> = [
+  { at: 0, rgba: [252, 76, 2, 0] },
+  { at: 0.1, rgba: [120, 40, 10, 120] },
+  { at: 0.3, rgba: [200, 60, 10, 200] },
+  { at: 0.55, rgba: [252, 76, 2, 235] },
+  { at: 0.75, rgba: [255, 140, 40, 250] },
+  { at: 0.9, rgba: [255, 205, 90, 255] },
+  { at: 1, rgba: [255, 246, 200, 255] },
+];
+
 const EARTH_RADIUS_KM = 6371;
 const DEG_TO_RAD = Math.PI / 180;
 const RAD_TO_DEG = 180 / Math.PI;
@@ -31,6 +54,12 @@ export interface HeatBounds {
 export interface SportTypeCount {
   type: string;
   count: number;
+}
+
+export interface HeatmapPrefs {
+  opacity: number;
+  basemap: boolean;
+  sports: string[];
 }
 
 /** Web Mercator normalised world coordinates; (0, 0) is the top-left corner. */
@@ -176,4 +205,51 @@ export function sportTypes(acts: Activity[]): SportTypeCount[] {
   return [...counts.entries()]
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
+}
+
+/**
+ * Alpha level at `q` over the non-transparent pixels, used to normalise the heat
+ * overlay. Transparent pixels are ignored so sparse margins do not drag the scale down.
+ */
+export function heatQuantile(alpha: Uint8Array, q = HOT_QUANTILE): number {
+  const values: number[] = [];
+  for (let i = 0; i < alpha.length; i++) {
+    if (alpha[i] > 0) values.push(alpha[i]);
+  }
+  if (values.length === 0) return 0;
+
+  values.sort((a, b) => a - b);
+  const index = Math.min(values.length - 1, Math.max(0, Math.floor(q * (values.length - 1))));
+  return values[index];
+}
+
+/**
+ * Recolours an RGBA raster in place, mapping its alpha channel through {@link RAMP}.
+ * `hot` is the alpha value that should reach the hottest stop; everything above it clamps.
+ * The input RGB is treated as white, so all colour comes from the ramp.
+ */
+export function applyHeatRamp(rgba: Uint8ClampedArray, hot: number): void {
+  const scale = 255 / Math.max(hot, 8);
+
+  for (let i = 0; i < rgba.length; i += 4) {
+    const alpha = rgba[i + 3];
+    if (alpha < 3) {
+      rgba[i + 3] = 0;
+      continue;
+    }
+
+    const v = Math.min(1, (alpha * scale) / 255) ** GAMMA;
+
+    let upper = 1;
+    while (upper < RAMP.length - 1 && RAMP[upper].at < v) upper++;
+
+    const hi = RAMP[upper];
+    const lo = RAMP[upper - 1];
+    const span = hi.at - lo.at;
+    const t = span === 0 ? 0 : (v - lo.at) / span;
+
+    for (let channel = 0; channel < 4; channel++) {
+      rgba[i + channel] = lo.rgba[channel] + (hi.rgba[channel] - lo.rgba[channel]) * t;
+    }
+  }
 }
