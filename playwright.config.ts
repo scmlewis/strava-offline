@@ -12,6 +12,12 @@ export default defineConfig({
     baseURL: `http://localhost:${port}`,
     headless: true,
     screenshot: 'only-on-failure',
+    // The production build registers the PWA service worker, whose CacheFirst
+    // handler for CARTO tiles sits in front of `page.route`. Without this, a
+    // test that aborts tile requests would still receive (watermarked) tiles,
+    // because Playwright does not intercept fetches made by a service worker.
+    // Blocking service workers keeps the e2e suite hermetic and deterministic.
+    serviceWorkers: 'block',
   },
   webServer: {
     command: `npm run preview -- --port ${port} --strictPort`,
