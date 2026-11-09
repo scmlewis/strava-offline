@@ -58,6 +58,12 @@ export interface HeatBounds {
   north: number;
 }
 
+/** A Leaflet-style viewport: `center` is `[lat, lon]`, matching `L.LatLng`. */
+export interface MapView {
+  center: [number, number];
+  zoom: number;
+}
+
 export interface SportTypeCount {
   type: string;
   count: number;
@@ -195,6 +201,42 @@ export function computeHeatBounds(
     east: east + padLon,
     north: north + padLat,
   };
+}
+
+/**
+ * Whether a saved viewport is worth discarding and refitting to the heat. Projects
+ * both rectangles into world pixels at the saved zoom and returns `true` when they
+ * do not overlap, so a user who panned away gets pulled back to their routes while
+ * one centred on the heat keeps their viewport across tab switches.
+ */
+export function shouldRefit(
+  view: MapView | null,
+  bounds: HeatBounds,
+  size: { width: number; height: number },
+): boolean {
+  if (!view) return true;
+
+  const scale = 256 * 2 ** view.zoom;
+  const centre = lonLatToWorld(view.center[0], view.center[1]);
+  const viewLeft = centre.x * scale - size.width / 2;
+  const viewTop = centre.y * scale - size.height / 2;
+  const viewRight = viewLeft + size.width;
+  const viewBottom = viewTop + size.height;
+
+  const nw = lonLatToWorld(bounds.north, bounds.west);
+  const se = lonLatToWorld(bounds.south, bounds.east);
+  const heatLeft = nw.x * scale;
+  const heatTop = nw.y * scale;
+  const heatRight = se.x * scale;
+  const heatBottom = se.y * scale;
+
+  const intersects =
+    viewRight > heatLeft &&
+    viewLeft < heatRight &&
+    viewBottom > heatTop &&
+    viewTop < heatBottom;
+
+  return !intersects;
 }
 
 /**

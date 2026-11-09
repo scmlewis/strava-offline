@@ -10,10 +10,13 @@ import {
   lonLatToWorld,
   MAX_RASTER,
   sanitizeRoutes,
+  shouldRefit,
+  sportTypes,
   TILE_ATTRIBUTION,
   TILE_URL,
   type HeatBounds,
   type HeatmapPrefs,
+  type MapView,
   type SanitizedRoute,
 } from '../data/heatmap.ts';
 import { t } from '../i18n.ts';
@@ -43,12 +46,11 @@ let renderToken = 0;
 let tileErrors = 0;
 
 /**
- * Viewport the user last settled on, reused when the tab is re-opened. Task 5 adds the
- * `shouldRefit` rule and writes this on `moveend`; `destroyHeatmap` deliberately keeps it.
- * Declared here (and only read for now) because the teardown contract must honour it.
+ * Viewport the user last settled on, reused when the tab is re-opened. Written on
+ * `moveend` and gated by `shouldRefit` on the next init; `destroyHeatmap` deliberately
+ * keeps it so the viewport survives tab switches.
  */
-// eslint-disable-next-line prefer-const -- reassigned by the Task 5 viewport rule.
-let savedView: { center: [number, number]; zoom: number } | null = null;
+let savedView: MapView | null = null;
 
 function clampOpacity(value: number): number {
   if (!Number.isFinite(value)) return DEFAULT_PREFS.opacity;
@@ -271,12 +273,25 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
     [bounds.south, bounds.west],
     [bounds.north, bounds.east],
   );
-  // Task 5 gates this restore behind `shouldRefit`; until then it always fits fresh bounds.
-  if (savedView) {
+  const size = map.getSize();
+  // Keep the viewport the user left on unless it no longer overlaps the heat (or
+  // there is none yet), in which case fit the routes fresh.
+  if (savedView && !shouldRefit(savedView, bounds, { width: size.x, height: size.y })) {
     map.setView(savedView.center, savedView.zoom);
   } else {
     map.fitBounds(boundsLatLng);
   }
+
+  // Track the settled viewport so the next tab render can restore it.
+  map.on('moveend', () => {
+    if (!map) return;
+    const centre = map.getCenter();
+    savedView = { center: [centre.lat, centre.lng], zoom: map.getZoom() };
+  });
+
+  // Zoom is added first so the Fit button stacks above it in the bottom-right corner
+  // (Leaflet renders later controls higher within a corner).
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
 
   const fitControl = new L.Control({ position: 'bottomright' });
   fitControl.onAdd = () => {
@@ -293,8 +308,6 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
   };
   fitControl.addTo(map);
 
-  L.control.zoom({ position: 'bottomright' }).addTo(map);
-
   const tiles = buildTiles();
   if (prefs.basemap) tiles.addTo(map);
 
@@ -302,8 +315,21 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
 }
 
 export function renderHeatmapTab(acts: Activity[]): HTMLElement {
-  const routes = sanitizeRoutes(acts);
+  // Start from a clean slate; `destroyHeatmap` keeps `savedView` so the viewport can
+  // be restored once the map is rebuilt below.
+  destroyHeatmap();
   prefs = loadPrefs();
+  const routes = sanitizeRoutes(acts);
+  const types = sportTypes(acts);
+
+  // Drop persisted sports that no longer exist, otherwise a stale filter would hide
+  // every route with no indication why.
+  const known = new Set(types.map((sport) => sport.type));
+  const pruned = prefs.sports.filter((sport) => known.has(sport));
+  if (pruned.length !== prefs.sports.length) {
+    prefs.sports = pruned;
+    savePrefs();
+  }
 
   const tab = el('div', 'heatmap-tab', 'heatmap-tab');
 
@@ -318,10 +344,27 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   title.textContent = t('heatmap_title');
   const count = el('span', 'heatmap-count', 'heatmap-count');
   count.id = 'heatmap-count';
-  count.textContent =
-    routes.length === 1 ? t('heatmap_routes_one') : t('heatmap_routes_many', { n: routes.length });
   head.append(title, count);
   panel.appendChild(head);
+
+  const chips = el('div', 'heatmap-chips');
+  chips.setAttribute('role', 'group');
+  chips.setAttribute('aria-label', t('heatmap_sports'));
+
+  const allChip = el('button', 'heatmap-chip', 'heatmap-chip-all');
+  allChip.type = 'button';
+  allChip.textContent = t('heatmap_all');
+
+  const typeChips = types.map((sport) => {
+    const chip = el('button', 'heatmap-chip', `heatmap-chip-${sport.type}`);
+    chip.type = 'button';
+    chip.dataset.sport = sport.type;
+    chip.textContent = t('heatmap_chip', { type: sport.type, n: sport.count });
+    return chip;
+  });
+
+  chips.append(allChip, ...typeChips);
+  panel.appendChild(chips);
 
   const controls = el('div', 'heatmap-controls');
 
@@ -368,16 +411,76 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
 
   field.append(panel, legend);
 
-  if (routes.length === 0) {
-    field.classList.add('is-empty');
-    const empty = el('div', 'heatmap-empty', 'heatmap-empty');
+  let emptyEl: HTMLElement | null = null;
+
+  function showEmpty(): void {
+    if (emptyEl) return;
+    emptyEl = el('div', 'heatmap-empty', 'heatmap-empty');
     const emptyIcon = el('span', 'heatmap-empty-icon');
     emptyIcon.setAttribute('aria-hidden', 'true');
     emptyIcon.innerHTML = icon('map', 28);
     const emptyText = el('span', 'heatmap-empty-text');
     emptyText.textContent = t('routes_hint');
-    empty.append(emptyIcon, emptyText);
-    field.appendChild(empty);
+    emptyEl.append(emptyIcon, emptyText);
+    field.appendChild(emptyEl);
+  }
+
+  function hideEmpty(): void {
+    if (!emptyEl) return;
+    emptyEl.remove();
+    emptyEl = null;
+  }
+
+  function setCount(n: number): void {
+    count.textContent = n === 1 ? t('heatmap_routes_one') : t('heatmap_routes_many', { n });
+  }
+
+  function visibleRoutes(): SanitizedRoute[] {
+    return prefs.sports.length === 0
+      ? routes
+      : routes.filter((route) => prefs.sports.includes(route.type));
+  }
+
+  function syncChips(): void {
+    allChip.setAttribute('aria-pressed', String(prefs.sports.length === 0));
+    for (const chip of typeChips) {
+      chip.setAttribute('aria-pressed', String(prefs.sports.includes(chip.dataset.sport ?? '')));
+    }
+  }
+
+  // Recompute the count and heat overlay in place — the map and its viewport survive.
+  function applyFilter(): void {
+    syncChips();
+    const list = visibleRoutes();
+    setCount(list.length);
+    if (list.length === 0) {
+      showEmpty();
+      if (map && overlay) {
+        map.removeLayer(overlay);
+        overlay = null;
+      }
+      return;
+    }
+    hideEmpty();
+    if (!map) return;
+    const filteredBounds = computeHeatBounds(list);
+    if (filteredBounds) updateHeat(list, filteredBounds);
+  }
+
+  allChip.addEventListener('click', () => {
+    prefs.sports = [];
+    savePrefs();
+    applyFilter();
+  });
+  for (const chip of typeChips) {
+    chip.addEventListener('click', () => {
+      const sport = chip.dataset.sport ?? '';
+      prefs.sports = prefs.sports.includes(sport)
+        ? prefs.sports.filter((entry) => entry !== sport)
+        : [...prefs.sports, sport];
+      savePrefs();
+      applyFilter();
+    });
   }
 
   opacity.addEventListener('input', () => {
@@ -400,14 +503,23 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   noteEl = note;
   applyPrefs();
 
-  if (routes.length > 0) {
-    const bounds = computeHeatBounds(routes);
+  const initialRoutes = visibleRoutes();
+  syncChips();
+  setCount(initialRoutes.length);
+
+  if (initialRoutes.length === 0) {
+    field.classList.add('is-empty');
+    showEmpty();
+  }
+
+  if (initialRoutes.length > 0) {
+    const bounds = computeHeatBounds(initialRoutes);
     if (bounds) {
       pendingFrame = requestAnimationFrame(() => {
         pendingFrame = 0;
         // The node can be detached again before the frame paints (fast tab switches).
         if (!field.isConnected) return;
-        initMap(field, routes, bounds);
+        initMap(field, initialRoutes, bounds);
       });
     }
   }

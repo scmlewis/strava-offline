@@ -8,6 +8,7 @@ import {
   heatQuantile,
   lonLatToWorld,
   sanitizeRoutes,
+  shouldRefit,
   sportTypes,
   worldToLonLat,
 } from '../src/data/heatmap';
@@ -197,5 +198,22 @@ describe('applyHeatRamp', () => {
     const brightness = (v: Uint8ClampedArray) => v[0] + v[1] + v[2] + v[3];
     expect(brightness(high)).toBeGreaterThan(brightness(low));
     expect([over[0], over[1], over[2], over[3]]).toEqual([255, 246, 200, 255]);
+  });
+});
+
+describe('shouldRefit', () => {
+  const bounds = { west: -0.15, south: 51.48, east: -0.08, north: 51.55 };
+  const size = { width: 800, height: 600 };
+
+  it('refits when there is no saved view', () => {
+    expect(shouldRefit(null, bounds, size)).toBe(true);
+  });
+
+  it('keeps a view centred on the heat', () => {
+    expect(shouldRefit({ center: [51.515, -0.115], zoom: 13 }, bounds, size)).toBe(false);
+  });
+
+  it('refits when the view has moved to another region', () => {
+    expect(shouldRefit({ center: [48.8566, 2.3522], zoom: 13 }, bounds, size)).toBe(true);
   });
 });

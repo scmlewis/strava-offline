@@ -105,3 +105,50 @@ test('basemap checkbox toggles the tile layer', async ({ page }) => {
   await page.locator('[data-testid="heatmap-basemap"]').check();
   await expect(page.locator('.leaflet-tile-pane img').first()).toBeAttached();
 });
+
+test('sport chips filter the heat without resetting the map', async ({ page }) => {
+  await importZip(page, {
+    'activities.csv':
+      `${CSV_HEADER}\n` +
+      `9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88\n` +
+      `8888,2024-06-02 7:00:00 AM,Test Ride,Ride,20.0,3600,3500,140,170,5.5,120,80`,
+    'activities/2024-06-01_Test_Run_9999.gpx': gpx(
+      [[51.5, -0.1], [51.505, -0.095], [51.51, -0.09]],
+      'Run',
+    ),
+    'activities/2024-06-02_Test_Ride_8888.gpx': gpx(
+      [[51.49, -0.11], [51.5, -0.1], [51.51, -0.09]],
+      'Ride',
+    ),
+  });
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText('2 routes');
+  await expect(page.locator('.heatmap-overlay')).toHaveAttribute('src', /.+/);
+  const before = await page.locator('.heatmap-overlay').getAttribute('src');
+  await page.locator('[data-testid="heatmap-chip-Ride"]').click();
+  await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText('1 route');
+  await expect
+    .poll(() => page.locator('.heatmap-overlay').getAttribute('src'))
+    .not.toBe(before);
+  await expect(page.locator('[data-testid="heatmap-chip-Ride"]')).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+});
+
+test('tab switches do not leak Leaflet maps', async ({ page }) => {
+  await importZip(page, {
+    'activities.csv': `${CSV_HEADER}\n9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88`,
+    'activities/2024-06-01_Test_Run_9999.gpx': gpx(
+      [[51.5, -0.1], [51.505, -0.095], [51.51, -0.09]],
+      'Run',
+    ),
+  });
+  for (let i = 0; i < 3; i++) {
+    await page.locator('[data-testid="nav-tab-heatmap"]').click();
+    await page.locator('[data-testid="nav-tab-overview"]').click();
+  }
+  await expect(page.locator('.leaflet-container')).toHaveCount(0);
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('.leaflet-container')).toHaveCount(1);
+});

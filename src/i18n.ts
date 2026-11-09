@@ -115,6 +115,8 @@ const EN: Dict = {
   heatmap_title: 'Heatmap',
   heatmap_region: 'Activity heatmap',
   heatmap_sports: 'Sports',
+  heatmap_all: 'All',
+  heatmap_chip: '{type} ({n})',
   heatmap_routes_one: '1 route',
   heatmap_routes_many: '{n} routes',
   heatmap_opacity: 'Opacity',
