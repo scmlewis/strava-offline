@@ -156,6 +156,17 @@
   line-height: 1.45;
 }
 
+.heatmap-rendering {
+  margin: 0;
+  color: var(--on-surface-variant);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.heatmap-rendering[hidden] {
+  display: none;
+}
+
 .heatmap-note {
   margin: 0;
   color: var(--warn);

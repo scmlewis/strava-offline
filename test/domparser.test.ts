@@ -43,4 +43,29 @@ describe('ensureDomParser', () => {
 
     expect(globalScope().DOMParser).toBe(sentinel);
   });
+
+  it('reads gpxtpx heart rate through the xmldom polyfill', () => {
+    delete globalScope().DOMParser;
+    ensureDomParser();
+
+    const xml =
+      '<?xml version="1.0"?>' +
+      '<gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"' +
+      ' xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">' +
+      '<trk><name>HR Run</name><trkseg>' +
+      '<trkpt lat="51.5" lon="-0.1"><time>2024-06-01T07:00:00Z</time>' +
+      '<extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>150</gpxtpx:hr>' +
+      '</gpxtpx:TrackPointExtension></extensions></trkpt>' +
+      '<trkpt lat="51.505" lon="-0.095"><time>2024-06-01T07:01:00Z</time>' +
+      '<extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>152</gpxtpx:hr>' +
+      '</gpxtpx:TrackPointExtension></extensions></trkpt>' +
+      '</trkseg></trk></gpx>';
+
+    const parsed = parseGpx(xml, '150');
+    expect(parsed).not.toBeNull();
+    expect(parsed?.points[0]?.hr).toBe(150);
+    expect(parsed?.points[1]?.hr).toBe(152);
+    expect(parsed?.activity.avgHr).toBe(151);
+    expect(parsed?.activity.maxHr).toBe(152);
+  });
 });

@@ -136,6 +136,49 @@ test('sport chips filter the heat without resetting the map', async ({ page }) =
   );
 });
 
+test('Fit routes refits to the filtered sport after a chip change', async ({ page }) => {
+  await importZip(page, {
+    'activities.csv':
+      `${CSV_HEADER}\n` +
+      `9999,2024-06-01 7:00:00 AM,London Run,Run,5.0,1800,1700,150,175,2.0,50,88\n` +
+      `8888,2024-06-02 7:00:00 AM,Paris Ride,Ride,20.0,3600,3500,140,170,5.5,120,80`,
+    'activities/2024-06-01_London_Run_9999.gpx': gpx(
+      [[51.5, -0.1], [51.505, -0.095], [51.51, -0.09]],
+      'London Run',
+    ),
+    'activities/2024-06-02_Paris_Ride_8888.gpx': gpx(
+      [[48.85, 2.34], [48.855, 2.35], [48.86, 2.36]],
+      'Paris Ride',
+    ),
+  });
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText('2 routes');
+  await expect(page.locator('.heatmap-overlay')).toHaveAttribute('src', /.+/);
+
+  // Leaflet zeroes `.leaflet-map-pane`'s transform on every `_resetView`, so it cannot
+  // witness a zoom refit. Its animation proxy is instead set to the settled center+zoom
+  // on every `moveend`/`load`, making it the deterministic viewport fingerprint.
+  const viewFingerprint = () => page.locator('.leaflet-proxy').getAttribute('style');
+  // Wait out the initial fitBounds zoom animation until the fingerprint stops changing.
+  let before = '';
+  for (let i = 0; i < 25; i++) {
+    const now = (await viewFingerprint()) ?? '';
+    if (now && now === before) break;
+    before = now;
+    await page.waitForTimeout(100);
+  }
+  expect(before).not.toBe('');
+
+  await page.locator('[data-testid="heatmap-chip-Ride"]').click();
+  await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText('1 route');
+  // Filtering redraws the raster but must not move the viewport.
+  expect(await viewFingerprint()).toBe(before);
+
+  // "Fit routes" must now target the filtered (Paris) bounds, not the stale initial ones.
+  await page.locator('[data-testid="heatmap-fit"]').click();
+  await expect.poll(viewFingerprint).not.toBe(before);
+});
+
 test('tab switches do not leak Leaflet maps', async ({ page }) => {
   await importZip(page, {
     'activities.csv': `${CSV_HEADER}\n9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88`,

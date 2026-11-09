@@ -193,7 +193,7 @@ const EN: Dict = {
   about_how: 'How to use',
   about_step1: 'Strava → Settings → Export data, you get a zip.',
   about_step2: 'Drag that zip or activities.csv onto the top upload area (or click “Choose file”).',
-  about_step3: 'Once cached locally, it works offline.',
+  about_step3: 'Once cached locally, it works offline (basemap tiles excepted).',
   about_step4:
     'Use the left tabs: Overview / Heatmap / Volume·Routes / Load·Pace / HR Zones / PR·Predict / Activity Log.',
   about_step5:

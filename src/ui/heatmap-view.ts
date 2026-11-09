@@ -41,9 +41,27 @@ let tileLayer: L.TileLayer | null = null;
 let overlay: L.ImageOverlay | null = null;
 let blobUrl: string | null = null;
 let noteEl: HTMLElement | null = null;
+let renderingEl: HTMLElement | null = null;
 let pendingFrame = 0;
 let renderToken = 0;
 let tileErrors = 0;
+
+/** The bounds the heat overlay currently represents; the single source of truth for "Fit routes". */
+let currentFitBounds: L.LatLngBounds | null = null;
+
+/** Deferred `requestAnimationFrame` handles for the in-flight heat render (two frames). */
+let renderFrames: number[] = [];
+
+/** Shows/hides the "Rendering heatmap…" status chip. */
+function setRendering(show: boolean): void {
+  if (renderingEl) renderingEl.hidden = !show;
+}
+
+/** Cancels any frames scheduled for the in-flight heat render. */
+function cancelRenderFrames(): void {
+  for (const frame of renderFrames) cancelAnimationFrame(frame);
+  renderFrames = [];
+}
 
 /**
  * Viewport the user last settled on, reused when the tab is re-opened. Written on
@@ -92,7 +110,6 @@ function savePrefs(): void {
 
 function applyPrefs(): void {
   if (!mapEl) return;
-  mapEl.style.setProperty('--heat-opacity', String(prefs.opacity));
   mapEl.classList.toggle('no-basemap', !prefs.basemap);
 }
 
@@ -210,33 +227,52 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
 /** Rasterises `routes` and swaps the image overlay in, ignoring stale renders. */
 function updateHeat(routes: SanitizedRoute[], bounds: HeatBounds): void {
   const token = ++renderToken;
-  const canvas = drawHeat(routes, bounds);
-  const boundsLatLng: L.LatLngBoundsExpression = [
+  const boundsLatLng = L.latLngBounds(
     [bounds.south, bounds.west],
     [bounds.north, bounds.east],
-  ];
+  );
+  // This render is now the target "Fit routes" zooms to; a chip change lands here too.
+  currentFitBounds = boundsLatLng;
 
-  canvas.toBlob((blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    // A newer render (or a teardown) finished first: drop this one and free its blob.
-    if (token !== renderToken || !map) {
-      URL.revokeObjectURL(url);
-      return;
-    }
-    if (overlay) {
-      map.removeLayer(overlay);
-      overlay = null;
-    }
-    if (blobUrl) URL.revokeObjectURL(blobUrl);
-    blobUrl = url;
-    overlay = L.imageOverlay(url, boundsLatLng, {
-      opacity: prefs.opacity,
-      interactive: false,
-      className: 'heatmap-overlay',
-    });
-    overlay.addTo(map);
-  });
+  // Show the status chip synchronously, then defer the heavy raster work by two
+  // frames so the chip can paint before the main thread blocks.
+  setRendering(true);
+  cancelRenderFrames();
+  renderFrames.push(
+    requestAnimationFrame(() => {
+      renderFrames.push(
+        requestAnimationFrame(() => {
+          renderFrames = [];
+          // Superseded by a newer render, or the map was torn down: drop this one.
+          // A newer render owns the chip; teardown clears it via `destroyHeatmap`.
+          if (token !== renderToken || !map) return;
+
+          drawHeat(routes, bounds).toBlob((blob) => {
+            // A newer render (or a teardown) finished first: drop this one.
+            if (token !== renderToken || !map) return;
+            if (!blob) {
+              setRendering(false);
+              return;
+            }
+            const url = URL.createObjectURL(blob);
+            if (overlay) {
+              map.removeLayer(overlay);
+              overlay = null;
+            }
+            if (blobUrl) URL.revokeObjectURL(blobUrl);
+            blobUrl = url;
+            overlay = L.imageOverlay(url, boundsLatLng, {
+              opacity: prefs.opacity,
+              interactive: false,
+              className: 'heatmap-overlay',
+            });
+            overlay.addTo(map);
+            setRendering(false);
+          });
+        }),
+      );
+    }),
+  );
 }
 
 /** Builds the CARTO tile layer and reveals the offline note after repeated tile errors. */
@@ -303,7 +339,9 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
     button.title = t('heatmap_fit');
     button.setAttribute('aria-label', t('heatmap_fit'));
     L.DomEvent.disableClickPropagation(button);
-    button.addEventListener('click', () => map?.fitBounds(boundsLatLng));
+    button.addEventListener('click', () => {
+      if (currentFitBounds) map?.fitBounds(currentFitBounds);
+    });
     return button;
   };
   fitControl.addTo(map);
@@ -346,6 +384,13 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   count.id = 'heatmap-count';
   head.append(title, count);
   panel.appendChild(head);
+
+  const rendering = el('p', 'heatmap-rendering', 'heatmap-rendering');
+  rendering.hidden = true;
+  rendering.setAttribute('role', 'status');
+  rendering.setAttribute('aria-live', 'polite');
+  rendering.textContent = t('heatmap_rendering');
+  panel.appendChild(rendering);
 
   const chips = el('div', 'heatmap-chips');
   chips.setAttribute('role', 'group');
@@ -455,9 +500,19 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
     setCount(list.length);
     if (list.length === 0) {
       showEmpty();
+      // Bump the token so any in-flight render cannot re-add a stale overlay, and
+      // free the empty raster blob (its overlay is being removed below).
+      cancelRenderFrames();
+      renderToken += 1;
+      setRendering(false);
+      currentFitBounds = null;
       if (map && overlay) {
         map.removeLayer(overlay);
         overlay = null;
+      }
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl);
+        blobUrl = null;
       }
       return;
     }
@@ -501,6 +556,7 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   tab.appendChild(field);
   mapEl = field;
   noteEl = note;
+  renderingEl = rendering;
   applyPrefs();
 
   const initialRoutes = visibleRoutes();
@@ -536,7 +592,9 @@ export function destroyHeatmap(): void {
     cancelAnimationFrame(pendingFrame);
     pendingFrame = 0;
   }
-  // Invalidate any in-flight `toBlob` callback so it revokes its URL instead of drawing.
+  // Drop any frames queued for the deferred raster work.
+  cancelRenderFrames();
+  // Invalidate any in-flight `toBlob` callback so it drops instead of drawing.
   renderToken += 1;
 
   if (map) {
@@ -547,6 +605,8 @@ export function destroyHeatmap(): void {
   tileLayer = null;
   tileErrors = 0;
   noteEl = null;
+  renderingEl = null;
+  currentFitBounds = null;
 
   if (blobUrl) {
     URL.revokeObjectURL(blobUrl);

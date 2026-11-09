@@ -113,6 +113,20 @@ describe('sanitizeRoutes', () => {
     sanitizeRoutes([activity('a', route)]);
     expect(route).toEqual(copy);
   });
+
+  it('hands out copies that cannot alias the stored route', () => {
+    const route: [number, number][] = [
+      [51.5, -0.1],
+      [51.51, -0.09],
+    ];
+    const [out] = sanitizeRoutes([activity('a', route)]);
+    out.points[0][0] = 0;
+    out.points[1][1] = 0;
+    expect(route).toEqual([
+      [51.5, -0.1],
+      [51.51, -0.09],
+    ]);
+  });
 });
 
 describe('computeHeatBounds', () => {
@@ -163,6 +177,26 @@ describe('sportTypes', () => {
   });
 });
 
+/** Deterministic PRNG so the property below is reproducible. */
+function mulberry32(seed: number): () => number {
+  let state = seed >>> 0;
+  return () => {
+    state = (state + 0x6d2b79f5) >>> 0;
+    let t = state;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/** Straightforward sort-based reference the counting histogram must match exactly. */
+function referenceQuantile(alpha: Uint8Array, q: number): number {
+  const values = [...alpha].filter((a) => a > 0).sort((a, b) => a - b);
+  if (values.length === 0) return 0;
+  const index = Math.min(values.length - 1, Math.max(0, Math.floor(q * (values.length - 1))));
+  return values[index];
+}
+
 describe('heatQuantile', () => {
   it('ignores zero alpha and returns the requested quantile', () => {
     const alpha = new Uint8Array([0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
@@ -172,6 +206,33 @@ describe('heatQuantile', () => {
 
   it('returns 0 when every pixel is transparent', () => {
     expect(heatQuantile(new Uint8Array([0, 0, 0]), 0.98)).toBe(0);
+  });
+
+  it('is exact against the sorted-value reference', () => {
+    const alpha = new Uint8Array(256);
+    for (let i = 0; i < 256; i++) alpha[i] = i; // one of every byte value
+    for (const q of [0, 0.25, 0.5, 0.9, 0.98, 1]) {
+      expect(heatQuantile(alpha, q)).toBe(referenceQuantile(alpha, q));
+    }
+  });
+
+  it('matches the reference across random alpha fields', () => {
+    const random = mulberry32(0x1234abcd);
+    const cases: Array<{ alpha: Uint8Array; q: number }> = [
+      { alpha: new Uint8Array(0), q: 0.98 },
+      { alpha: new Uint8Array([255]), q: 0.5 },
+      { alpha: new Uint8Array([1, 2, 3, 4, 5]), q: 0.98 },
+      { alpha: new Uint8Array([0, 0, 0, 17]), q: 1 },
+    ];
+    for (let i = 0; i < 60; i++) {
+      const len = Math.floor(random() * 500);
+      const field = new Uint8Array(len);
+      for (let j = 0; j < len; j++) field[j] = Math.floor(random() * 256);
+      cases.push({ alpha: field, q: random() });
+    }
+    for (const { alpha: field, q } of cases) {
+      expect(heatQuantile(field, q)).toBe(referenceQuantile(field, q));
+    }
   });
 });
 

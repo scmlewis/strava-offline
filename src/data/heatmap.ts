@@ -143,9 +143,14 @@ export function sanitizeRoutes(acts: Activity[]): SanitizedRoute[] {
       continue;
     }
 
-    const points = valid.filter(
-      ([lat, lon]) => haversineKm([medianLat, medianLon], [lat, lon]) <= MAX_POINT_RADIUS_KM,
-    );
+    // Copy each surviving tuple so display-time data (the heat overlay, decimation
+    // in consumers) can never alias — and therefore mutate — the stored route.
+    const points: [number, number][] = [];
+    for (const [lat, lon] of valid) {
+      if (haversineKm([medianLat, medianLon], [lat, lon]) <= MAX_POINT_RADIUS_KM) {
+        points.push([lat, lon]);
+      }
+    }
     if (points.length < 2) continue;
 
     routes.push({ id: activity.id, type: normaliseType(activity.type), points });
@@ -261,15 +266,27 @@ export function sportTypes(acts: Activity[]): SportTypeCount[] {
  * overlay. Transparent pixels are ignored so sparse margins do not drag the scale down.
  */
 export function heatQuantile(alpha: Uint8Array, q = HOT_QUANTILE): number {
-  const values: number[] = [];
+  // Alpha is a byte, so an exact counting histogram gives the same order statistic
+  // as sorting every value but in O(n + 256) instead of O(n log n) — important when
+  // a dense raster holds up to 2048² non-transparent pixels.
+  const histogram = new Uint32Array(256);
+  let count = 0;
   for (let i = 0; i < alpha.length; i++) {
-    if (alpha[i] > 0) values.push(alpha[i]);
+    const value = alpha[i];
+    if (value > 0) {
+      histogram[value] += 1;
+      count += 1;
+    }
   }
-  if (values.length === 0) return 0;
+  if (count === 0) return 0;
 
-  values.sort((a, b) => a - b);
-  const index = Math.min(values.length - 1, Math.max(0, Math.floor(q * (values.length - 1))));
-  return values[index];
+  // Walk the histogram to the same 0-based index `sorted[floor(q * (n - 1))]`.
+  let index = Math.min(count - 1, Math.max(0, Math.floor(q * (count - 1))));
+  for (let value = 1; value < 256; value++) {
+    if (index < histogram[value]) return value;
+    index -= histogram[value];
+  }
+  return 255;
 }
 
 /**

@@ -200,14 +200,14 @@ Filters = { type, range:'all'|'90'|'180'|'365', from, to, minKm, maxKm, minGain,
 
 - **Backup:** full JSON (bundle above), download `strava-backup-YYYY-MM-DD.json`. **Export shown:** same but only filtered activities (`strava-filtered-…`).
 - **Restore:** parse JSON → `validateBackup` → write settings + `bulkPut` activities → reload; error messages mapped to friendly toasts.
-- **Clear data modal:** backup-first, clear activities only, clear settings only, clear all (activities + 5 settings keys; theme kept).
+- **Clear data modal:** backup-first, clear activities only, clear settings only, clear all (activities + 6 settings keys; theme kept).
 
 ---
 
 ## 9. Tests & quality gates
 
 - Vitest unit tests in `test/` pin exact formula outputs (TSS ≈43 for avgHR 148 / 3000 s at defaults; climb score 650 for 500 m / 10 km; zone edges 154→Z2, 155→Z3, 206→Z5; proxy histogram bucket; ingest issues isolation), property tests (`fast-check`) for TSB=CTL−ATL etc., Playwright e2e.
-- `npm run lint` (ESLint + typescript-eslint), `npm run typecheck`, Prettier. CI: `.github/workflows/deploy.yml` builds and publishes `dist/` to GitHub Pages on push to `main`.
+- `npm run lint` (ESLint + typescript-eslint), `npm run typecheck`, Prettier. No CI workflow is checked into this checkout (`.github/` is absent); producing `dist/` for GitHub Pages is a manual `npm run build`.
 
 ## 10. Known quirks to reproduce
 
