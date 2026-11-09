@@ -195,7 +195,7 @@ const EN: Dict = {
   about_step2: 'Drag that zip or activities.csv onto the top upload area (or click “Choose file”).',
   about_step3: 'Once cached locally, it works offline.',
   about_step4:
-    'Use the left tabs: Overview / Volume·Routes / Load·Pace / HR Zones / PR·Predict / Activity Log.',
+    'Use the left tabs: Overview / Heatmap / Volume·Routes / Load·Pace / HR Zones / PR·Predict / Activity Log.',
   about_step5:
     'The top “Filter” toggles; supports type, date, weekday, intensity, distance, climb, pace.',
   about_features: 'Features',
@@ -203,10 +203,10 @@ const EN: Dict = {
   about_f2: 'HR zone distribution, Easy% stats',
   about_f3: 'VO₂max (VDOT) estimate + Jack Daniels training paces',
   about_f4: 'Personal best (PR) + Riegel race prediction',
-  about_f5: 'Annual training calendar heatmap, streak',
+  about_f5: 'Annual training calendar heatmap, route heatmap (Strava-style glow), streak',
   about_f6: 'Custom HR zones, weekly goal, units (km/mi)',
   about_safe:
-    'Data safety: backup export makes a JSON; import can restore. This app connects to no network server; all computation runs on your machine.',
+    'All analysis runs on this device; your activities never leave it. The Heatmap tab fetches basemap tiles from CARTO when online (previously viewed areas are cached); the heat layer itself is computed locally and works offline.',
   about_ok: 'Got it',
 
   // ---- zones modal ----

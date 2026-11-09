@@ -22,6 +22,7 @@ Strava → Settings → Export data → you get a zip containing `activities.csv
 - Charts: last 16 weeks volume, **training load CTL/ATL/TSB**, running pace trend, HR-zone distribution
 - Analysis: **TSS / CTL / ATL / TSB** (HR-based), **Personal Records** (5K/10K/Half/Marathon), **Riegel race prediction**
 - Route shape mini-map (GPX polyline, no basemap tiles)
+- Route heatmap (Strava-style glow over a dark basemap; sport/date filters)
 - Filters (type / time range / weekday / intensity / distance / climb / pace), **Zone settings panel** (localStorage-persisted; changing HRmax/rest/FTHR recomputes everything), **backup/restore JSON export**
 
 ## Zone model (anchored to measured data)
@@ -50,5 +51,6 @@ npm run build
 ## Limitations (honest)
 - Cross-device sync: no backend, so switching machines requires re-import (use the backup JSON to move data).
 - GPX HR namespace uses several common tags as fallbacks; an individual device's export with a different namespace may not yield a true histogram and will fall back to the avg-HR proxy.
-- Routes are polyline shapes — no map basemap, no navigation (deliberate MVP scope).
+- Route mini-maps are polyline shapes — no basemap or navigation (deliberate MVP scope); the Heatmap tab adds a dark basemap.
+- The heatmap basemap fetches CARTO/OSM tiles online; viewed tiles are cached, and the heat layer renders without them.
 - TSS/CTL are HR-based estimates (no power meter); with FTHR they switch to HRR-based intensity.
