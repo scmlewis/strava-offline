@@ -56,7 +56,7 @@ function makeChart(host: HTMLElement, opts: uPlot.Options, data: uPlot.AlignedDa
   return plot;
 }
 const ZONE_COLORS = ['#7a8299', '#34d399', '#fbbf24', '#fb923c', '#f87171'];
-export type TabId = 'overview' | 'volume' | 'load' | 'zones' | 'perf' | 'log';
+export type TabId = 'overview' | 'heatmap' | 'volume' | 'load' | 'zones' | 'perf' | 'log';
 
 export interface DashCtx {
   tab: TabId;
@@ -68,6 +68,7 @@ export interface DashCtx {
 
 import { esc, toLocalDate } from '../utils';
 import { card } from '../ui/cards.ts';
+import { destroyHeatmap, renderHeatmapTab } from '../ui/heatmap-view.ts';
 import { coachNote } from './coach.ts';
 
 // ---- unit-aware formatters ----
@@ -822,6 +823,8 @@ function renderTab(tab: TabId, acts: Activity[], ctx: DashCtx): HTMLElement {
   switch (tab) {
     case 'overview':
       return renderOverview(acts);
+    case 'heatmap':
+      return renderHeatmapTab(acts);
     case 'volume':
       return wrapPair(renderWeekly(acts), renderRoutes(acts));
     case 'load':
@@ -847,6 +850,7 @@ export function renderDashboard(root: HTMLElement, acts: Activity[], ctx: DashCt
     p.destroy();
   });
   plots = [];
+  destroyHeatmap();
   root.innerHTML = '';
   root.hidden = false;
   lastActs = acts;

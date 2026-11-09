@@ -51,6 +51,7 @@ const SETTINGS_KEYS = [
   'unitPref',
   'filterCollapsed',
   'prefs',
+  'heatmapPrefs',
 ] as const;
 
 /** Remove all activities from IndexedDB and all settings from localStorage. */

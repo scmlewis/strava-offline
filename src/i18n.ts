@@ -17,6 +17,7 @@ const EN: Dict = {
 
   // ---- nav ----
   nav_overview: 'Overview',
+  nav_heatmap: 'Heatmap',
   nav_volume: 'Volume / Routes',
   nav_load: 'Load / Pace',
   nav_zones: 'HR Zones',
@@ -111,6 +112,19 @@ const EN: Dict = {
   hm_more: 'More (km)',
   hm_hint:
     'Color = total km that day (quantile-based 5 levels, so a long run does not wash out daily bars). Columns = weekday (Sun→Sat). Activities with no distance (manual logs / some rides) count as 0 km — uncolored but still included in analysis.',
+  heatmap_title: 'Heatmap',
+  heatmap_region: 'Activity heatmap',
+  heatmap_sports: 'Sports',
+  heatmap_routes_one: '1 route',
+  heatmap_routes_many: '{n} routes',
+  heatmap_opacity: 'Opacity',
+  heatmap_basemap: 'Basemap',
+  heatmap_fit: 'Fit routes',
+  heatmap_less: 'Less',
+  heatmap_more: 'More',
+  heatmap_local: 'Rendered locally · basemap © OpenStreetMap / CARTO',
+  heatmap_offline: 'Basemap unavailable — showing your heatmap only.',
+  heatmap_rendering: 'Rendering heatmap…',
 
   // ---- charts ----
   weekly_volume: 'Last {n} weeks volume ({unit})',

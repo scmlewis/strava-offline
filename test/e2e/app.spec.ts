@@ -48,7 +48,8 @@ test.describe('Strava Offline Analyzer', () => {
 
   test('keyboard number switches tab via hash route', async ({ page }) => {
     await page.goto('/');
-    await page.keyboard.press('3');
+    // heatmap is now the second tab, so load moved from key 3 to key 4
+    await page.keyboard.press('4');
     await expect(page).toHaveURL(/#\/load/);
     await expect(page.locator('#nav .nav-tab.active')).toContainText('Load');
   });

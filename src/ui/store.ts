@@ -1,6 +1,6 @@
 import type { Activity } from '../data/types.ts';
 
-export type TabId = 'overview' | 'volume' | 'load' | 'zones' | 'perf' | 'log';
+export type TabId = 'overview' | 'heatmap' | 'volume' | 'load' | 'zones' | 'perf' | 'log';
 
 export interface Filters {
   type: string;

@@ -1,0 +1,264 @@
+/* ---- Heatmap tab: dark map field + floating controls ---- */
+.heatmap-tab {
+  min-width: 0;
+}
+
+.heatmap-map {
+  position: relative;
+  height: clamp(480px, calc(100dvh - 260px), 820px);
+  background-color: #0b0d10;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+  border: 1px solid var(--outline);
+  border-radius: var(--radius-lg, 16px);
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The basemap toggle will show/hide tiles in Task 4; until then keep the field dark. */
+.heatmap-map.no-basemap {
+  background-color: #07090c;
+}
+
+.heatmap-panel {
+  position: absolute;
+  top: 16px;
+  left: 16px;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(280px, calc(100% - 32px));
+  padding: 14px 16px;
+  border: 1px solid var(--outline-strong);
+  border-radius: var(--shape-md);
+  background: color-mix(in srgb, var(--surface-container) 86%, transparent);
+  box-shadow: var(--elevation-2);
+  color: var(--on-surface);
+  backdrop-filter: blur(10px);
+}
+
+.heatmap-panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.heatmap-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.heatmap-count {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border-radius: var(--shape-full);
+  background: color-mix(in srgb, var(--primary) 16%, transparent);
+  color: var(--primary);
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.heatmap-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.heatmap-field {
+  display: grid;
+  gap: 6px;
+  color: var(--on-surface-variant);
+  font-size: 0.78rem;
+}
+
+.heatmap-field-label,
+.heatmap-toggle-label {
+  line-height: 1.2;
+}
+
+.heatmap-opacity {
+  width: 100%;
+  margin: 0;
+  accent-color: var(--primary);
+}
+
+.heatmap-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--on-surface-variant);
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.heatmap-basemap {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+.heatmap-panel input:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.heatmap-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.heatmap-note {
+  margin: 0;
+  color: var(--warn);
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.heatmap-note[hidden] {
+  display: none;
+}
+
+.heatmap-legend {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--outline-strong);
+  border-radius: var(--shape-full);
+  background: color-mix(in srgb, var(--surface-container) 84%, transparent);
+  color: var(--on-surface-variant);
+  font-size: 0.7rem;
+  backdrop-filter: blur(8px);
+}
+
+.heatmap-ramp {
+  width: 96px;
+  height: 8px;
+  border-radius: var(--shape-full);
+  background: linear-gradient(90deg, #3a1d0f, #fc4c02, #ffb547, #fff3b0);
+}
+
+.heatmap-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 32px;
+  color: #b9c0cc;
+  font-size: 0.88rem;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.heatmap-empty-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: var(--shape-full);
+  background: rgba(255, 255, 255, 0.04);
+  color: #6b7482;
+}
+
+.heatmap-empty-text {
+  max-width: 34ch;
+}
+
+.heatmap-map.is-empty .heatmap-controls,
+.heatmap-map.is-empty .heatmap-hint,
+.heatmap-map.is-empty .heatmap-legend {
+  display: none;
+}
+
+@media (max-width: 599px) {
+  .heatmap-map {
+    height: max(420px, calc(100dvh - 320px));
+  }
+
+  /* Compact one-line bar so the map keeps the available height. */
+  .heatmap-panel {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: var(--shape-full);
+  }
+
+  .heatmap-panel-head {
+    flex: 1 1 auto;
+    gap: 6px;
+  }
+
+  .heatmap-title {
+    font-size: 0.82rem;
+  }
+
+  .heatmap-count {
+    padding: 1px 6px;
+    font-size: 0.66rem;
+  }
+
+  .heatmap-controls {
+    flex: 0 0 auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .heatmap-field {
+    display: flex;
+    align-items: center;
+  }
+
+  .heatmap-field-label,
+  .heatmap-toggle-label {
+    display: none;
+  }
+
+  .heatmap-opacity {
+    width: 72px;
+  }
+
+  .heatmap-hint {
+    display: none;
+  }
+
+  .heatmap-legend {
+    left: 8px;
+    bottom: 8px;
+    padding: 6px 10px;
+  }
+
+  .heatmap-ramp {
+    width: 64px;
+  }
+
+  .heatmap-empty {
+    padding: 24px;
+  }
+}

@@ -1,6 +1,6 @@
 import type { TabId } from './store.ts';
 
-export const TABS: TabId[] = ['overview', 'volume', 'load', 'zones', 'perf', 'log'];
+export const TABS: TabId[] = ['overview', 'heatmap', 'volume', 'load', 'zones', 'perf', 'log'];
 
 const TAB_SET: ReadonlySet<string> = new Set(TABS);
 

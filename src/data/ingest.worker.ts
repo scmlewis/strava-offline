@@ -3,6 +3,11 @@
 // freezes on a 44MB zip. Progress is streamed back via postMessage.
 import { ingestFiles, type IngestSummary } from './zip';
 
+// Dedicated workers do not expose DOMParser (Chromium), so GPX tracks cannot be
+// parsed here. Signal the client to retry on the main thread, where DOMParser
+// exists, instead of silently importing routes as null.
+const hasDomParser = typeof DOMParser !== 'undefined';
+
 export interface IngestRequest {
   type: 'ingest';
   files: File[];
@@ -15,6 +20,13 @@ export type IngestResponse =
 self.onmessage = async (ev: MessageEvent<IngestRequest>) => {
   const msg = ev.data;
   if (msg.type !== 'ingest') return;
+  if (!hasDomParser) {
+    (self as unknown as Worker).postMessage({
+      type: 'error',
+      message: 'DOMParser unavailable in worker',
+    } as IngestResponse);
+    return;
+  }
   try {
     const summary = await ingestFiles(msg.files, (done, total, phase) => {
       (self as unknown as Worker).postMessage({

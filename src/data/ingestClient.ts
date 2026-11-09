@@ -30,7 +30,11 @@ export function runIngest(
             resolve(msg.summary);
           } else if (msg.type === 'error') {
             worker.terminate();
-            reject(new Error(msg.message));
+            // Fall back to the main thread (e.g. workers without DOMParser,
+            // which must still parse GPX tracks).
+            ingestFiles(list, (d, t, phase) => onProgress?.({ done: d, total: t, phase }))
+              .then(resolve)
+              .catch(reject);
           }
         };
         worker.onerror = () => {

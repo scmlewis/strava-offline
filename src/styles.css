@@ -6,6 +6,7 @@
 @import './styles/cards.css';
 @import './styles/modals.css';
 @import './styles/responsive.css';
+@import './styles/heatmap.css';
 
 /* Modern component styles */
 @import './styles/modern-cards.css';

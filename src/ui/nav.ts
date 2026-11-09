@@ -5,6 +5,7 @@ import { icon, type IconName } from '../icons.ts';
 
 const NAV_ICONS: Record<TabId, IconName> = {
   overview: 'overview',
+  heatmap: 'map',
   volume: 'activity',
   load: 'flame',
   zones: 'heart',
@@ -14,6 +15,7 @@ const NAV_ICONS: Record<TabId, IconName> = {
 
 const NAV_LABEL_KEYS: Record<TabId, string> = {
   overview: 'nav_overview',
+  heatmap: 'nav_heatmap',
   volume: 'nav_volume',
   load: 'nav_load',
   zones: 'nav_zones',
