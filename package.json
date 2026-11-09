@@ -21,6 +21,7 @@
     "bench": "vitest bench"
   },
   "dependencies": {
+    "@xmldom/xmldom": "^0.8.10",
     "dexie": "^4.0.8",
     "fit-file-parser": "^5.0.2",
     "jszip": "^3.10.1",
@@ -35,7 +36,6 @@
     "@types/papaparse": "^5.3.14",
     "@vitejs/plugin-react": "^4.3.4",
     "@vitest/coverage-v8": "^3.2.7",
-    "@xmldom/xmldom": "^0.8.10",
     "autoprefixer": "^10.4.20",
     "eslint": "^10.10.0",
     "fast-check": "^4.9.0",

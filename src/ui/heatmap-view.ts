@@ -137,6 +137,7 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
     map.classList.add('is-empty');
     const empty = el('div', 'heatmap-empty', 'heatmap-empty');
     const emptyIcon = el('span', 'heatmap-empty-icon');
+    emptyIcon.setAttribute('aria-hidden', 'true');
     emptyIcon.innerHTML = icon('map', 28);
     const emptyText = el('span', 'heatmap-empty-text');
     emptyText.textContent = t('routes_hint');
