@@ -18,6 +18,13 @@ export const MAX_RASTER = 2048;
 /** `localStorage` key for the persisted heatmap preferences. */
 export const HEATMAP_PREFS_KEY = 'heatmapPrefs';
 
+/** CARTO dark basemap tiles; the only network resource the heatmap ever loads. */
+export const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+/** Attribution required by the OpenStreetMap / CARTO tile licence. */
+export const TILE_ATTRIBUTION =
+  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+
 /** Colour stops for the heat overlay, ascending from cold (0) to hot (1). */
 export const RAMP: Array<{ at: number; rgba: [number, number, number, number] }> = [
   { at: 0, rgba: [252, 76, 2, 0] },

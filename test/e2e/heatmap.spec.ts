@@ -54,3 +54,54 @@ test('heatmap tab shows the route count with GPX data', async ({ page }) => {
   await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText('1 route');
   await expect(page.locator('[data-testid="heatmap-empty"]')).toHaveCount(0);
 });
+
+test('renders heat over the dark map and survives blocked tiles', async ({ page }) => {
+  await page.route(/basemaps\.cartocdn\.com/, (route) => route.abort());
+  const run = gpx(
+    [
+      [51.5, -0.1],
+      [51.505, -0.095],
+      [51.51, -0.09],
+    ],
+    'Run',
+  );
+  await importZip(page, {
+    'activities.csv': `${CSV_HEADER}\n9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88`,
+    'activities/2024-06-01_Test_Run_9999.gpx': run,
+  });
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+
+  await expect(page.locator('.leaflet-container')).toBeVisible();
+  await expect(page.locator('.heatmap-overlay')).toHaveCount(1);
+  await expect
+    .poll(() =>
+      page
+        .locator('.heatmap-overlay')
+        .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect(page.locator('[data-testid="heatmap-note"]')).toContainText(
+    'Basemap unavailable',
+  );
+});
+
+test('basemap checkbox toggles the tile layer', async ({ page }) => {
+  const run = gpx(
+    [
+      [51.5, -0.1],
+      [51.505, -0.095],
+      [51.51, -0.09],
+    ],
+    'Run',
+  );
+  await importZip(page, {
+    'activities.csv': `${CSV_HEADER}\n9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88`,
+    'activities/2024-06-01_Test_Run_9999.gpx': run,
+  });
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('.leaflet-tile-pane img').first()).toBeAttached();
+  await page.locator('[data-testid="heatmap-basemap"]').uncheck();
+  await expect(page.locator('.leaflet-tile-pane img')).toHaveCount(0);
+  await page.locator('[data-testid="heatmap-basemap"]').check();
+  await expect(page.locator('.leaflet-tile-pane img').first()).toBeAttached();
+});

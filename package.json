@@ -25,6 +25,7 @@
     "dexie": "^4.0.8",
     "fit-file-parser": "^5.0.2",
     "jszip": "^3.10.1",
+    "leaflet": "^1.9.4",
     "pako": "^2.2.0",
     "papaparse": "^5.4.1",
     "uplot": "^1.6.31"
@@ -32,6 +33,7 @@
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@playwright/test": "^1.63.0",
+    "@types/leaflet": "^1.9.22",
     "@types/pako": "^2.0.4",
     "@types/papaparse": "^5.3.14",
     "@vitejs/plugin-react": "^4.3.4",

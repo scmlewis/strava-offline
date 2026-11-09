@@ -26,7 +26,8 @@
   position: absolute;
   top: 16px;
   left: 16px;
-  z-index: 2;
+  /* Above Leaflet's panes and controls (z-index 400/800/1000) so it stays interactive. */
+  z-index: 1000;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -134,7 +135,7 @@
   position: absolute;
   left: 16px;
   bottom: 16px;
-  z-index: 2;
+  z-index: 1000;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -261,4 +262,41 @@
   .heatmap-empty {
     padding: 24px;
   }
+}
+
+/* ---- Leaflet integration ---- */
+/* Leaflet resets the container background to #ddd; restore the dark field underneath tiles. */
+.heatmap-map.leaflet-container {
+  background-color: #0b0d10;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 48px 48px;
+}
+
+.heatmap-map.leaflet-container.no-basemap {
+  background-color: #07090c;
+}
+
+/* Custom Fit-routes control, styled to sit beside the Leaflet zoom control. */
+.heatmap-fit {
+  display: block;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 4px;
+  background: #fff;
+  color: #111;
+  font: inherit;
+  font-size: 0.72rem;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+.heatmap-fit:hover {
+  background: #f4f4f4;
+}
+
+.heatmap-fit:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
