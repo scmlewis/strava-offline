@@ -121,10 +121,11 @@ const EN: Dict = {
   heatmap_routes_many: '{n} routes',
   heatmap_opacity: 'Opacity',
   heatmap_basemap: 'Basemap',
+  heatmap_lines: 'Route lines',
   heatmap_fit: 'Fit routes',
   heatmap_less: 'Less',
   heatmap_more: 'More',
-  heatmap_local: 'Rendered locally · basemap © OpenStreetMap / CARTO',
+  heatmap_local: 'Rendered locally · basemap © Esri / OSM',
   heatmap_offline: 'Basemap unavailable — showing your heatmap only.',
   heatmap_rendering: 'Rendering heatmap…',
 
@@ -206,7 +207,7 @@ const EN: Dict = {
   about_f5: 'Annual training calendar heatmap, route heatmap (Strava-style glow), streak',
   about_f6: 'Custom HR zones, weekly goal, units (km/mi)',
   about_safe:
-    'All analysis runs on this device; your activities never leave it. The Heatmap tab fetches basemap tiles from CARTO when online (previously viewed areas are cached); the heat layer itself is computed locally and works offline.',
+    'All analysis runs on this device; your activities never leave it. The Heatmap tab fetches basemap tiles from Esri when online (previously viewed areas are cached); the heat layer itself is computed locally and works offline.',
   about_ok: 'Got it',
 
   // ---- zones modal ----

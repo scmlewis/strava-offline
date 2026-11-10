@@ -10,7 +10,7 @@ export const MIN_SPAN_DEG = 0.002;
 export const HOT_QUANTILE = 0.98;
 
 /** Gamma applied to normalised heat, lifting mid-density trails away from the cold end. */
-export const GAMMA = 0.75;
+export const GAMMA = 0.9;
 
 /** Longest raster edge, capping buffer size on very large viewports. */
 export const MAX_RASTER = 2048;
@@ -18,12 +18,13 @@ export const MAX_RASTER = 2048;
 /** `localStorage` key for the persisted heatmap preferences. */
 export const HEATMAP_PREFS_KEY = 'heatmapPrefs';
 
-/** CARTO dark basemap tiles; the only network resource the heatmap ever loads. */
-export const TILE_URL = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+/** Esri World Dark Gray Canvas raster tiles; keyless and the only network resource the heatmap loads. */
+export const TILE_URL =
+  'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}';
 
-/** Attribution required by the OpenStreetMap / CARTO tile licence. */
+/** Attribution required by the Esri / OpenStreetMap tile licence. */
 export const TILE_ATTRIBUTION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+  '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, and the GIS user community';
 
 /** Colour stops for the heat overlay, ascending from cold (0) to hot (1). */
 export const RAMP: Array<{ at: number; rgba: [number, number, number, number] }> = [
@@ -73,6 +74,48 @@ export interface HeatmapPrefs {
   opacity: number;
   basemap: boolean;
   sports: string[];
+  /** Draw the individual route outlines above the heat glow. */
+  lines: boolean;
+}
+
+/** Default heatmap preferences; also the fallback for missing or malformed storage. */
+export const DEFAULT_HEATMAP_PREFS: HeatmapPrefs = {
+  opacity: 0.85,
+  basemap: true,
+  sports: [],
+  lines: true,
+};
+
+/** Lowest and highest overlay opacity the slider/prefs allow. */
+export const MIN_HEAT_OPACITY = 0.25;
+export const MAX_HEAT_OPACITY = 1;
+
+/**
+ * Validates an unknown parsed `heatmapPrefs` value field by field, so one bad key
+ * cannot discard the rest of the user's preferences.
+ */
+export function normalisePrefs(value: unknown): HeatmapPrefs {
+  const source =
+    value && typeof value === 'object' && !Array.isArray(value)
+      ? (value as Record<string, unknown>)
+      : {};
+  const rawOpacity = source.opacity;
+
+  return {
+    opacity:
+      typeof rawOpacity === 'number' && Number.isFinite(rawOpacity)
+        ? Math.min(MAX_HEAT_OPACITY, Math.max(MIN_HEAT_OPACITY, rawOpacity))
+        : DEFAULT_HEATMAP_PREFS.opacity,
+    basemap:
+      typeof source.basemap === 'boolean'
+        ? source.basemap
+        : DEFAULT_HEATMAP_PREFS.basemap,
+    sports: Array.isArray(source.sports)
+      ? source.sports.filter((sport): sport is string => typeof sport === 'string')
+      : [],
+    lines:
+      typeof source.lines === 'boolean' ? source.lines : DEFAULT_HEATMAP_PREFS.lines,
+  };
 }
 
 /** Web Mercator normalised world coordinates; (0, 0) is the top-left corner. */

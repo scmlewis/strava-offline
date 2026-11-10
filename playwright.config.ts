@@ -14,9 +14,9 @@ export default defineConfig({
     headless: true,
     screenshot: 'only-on-failure',
     // The production build registers the PWA service worker, whose CacheFirst
-    // handler for CARTO tiles sits in front of `page.route`. Without this, a
-    // test that aborts tile requests would still receive (watermarked) tiles,
-    // because Playwright does not intercept fetches made by a service worker.
+    // handler for Esri tiles sits in front of `page.route`. Without this, a
+    // test that aborts tile requests would still receive cached tiles, because
+    // Playwright does not intercept fetches made by a service worker.
     // Blocking service workers keeps the e2e suite hermetic and deterministic.
     serviceWorkers: 'block',
   },

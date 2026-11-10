@@ -56,7 +56,7 @@ test('heatmap tab shows the route count with GPX data', async ({ page }) => {
 });
 
 test('renders heat over the dark map and survives blocked tiles', async ({ page }) => {
-  await page.route(/basemaps\.cartocdn\.com/, (route) => route.abort());
+  await page.route(/server\.arcgisonline\.com/, (route) => route.abort());
   const run = gpx(
     [
       [51.5, -0.1],
@@ -104,6 +104,10 @@ test('basemap checkbox toggles the tile layer', async ({ page }) => {
   await expect(page.locator('.leaflet-tile-pane img')).toHaveCount(0);
   await page.locator('[data-testid="heatmap-basemap"]').check();
   await expect(page.locator('.leaflet-tile-pane img').first()).toBeAttached();
+  await expect(page.locator('.leaflet-tile-pane img').first()).toHaveAttribute(
+    'src',
+    /server\.arcgisonline\.com/,
+  );
 });
 
 test('sport chips filter the heat without resetting the map', async ({ page }) => {
@@ -177,6 +181,45 @@ test('Fit routes refits to the filtered sport after a chip change', async ({ pag
   // "Fit routes" must now target the filtered (Paris) bounds, not the stale initial ones.
   await page.locator('[data-testid="heatmap-fit"]').click();
   await expect.poll(viewFingerprint).not.toBe(before);
+});
+
+test('route lines are drawn above the heat and can be hidden', async ({ page }) => {
+  await importZip(page, {
+    'activities.csv':
+      `${CSV_HEADER}\n` +
+      `9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88\n` +
+      `8888,2024-06-02 7:00:00 AM,Test Ride,Ride,20.0,3600,3500,140,170,5.5,120,80`,
+    'activities/2024-06-01_Test_Run_9999.gpx': gpx(
+      [[51.5, -0.1], [51.505, -0.095], [51.51, -0.09]],
+      'Run',
+    ),
+    'activities/2024-06-02_Test_Ride_8888.gpx': gpx(
+      [[51.49, -0.11], [51.5, -0.1], [51.51, -0.09]],
+      'Ride',
+    ),
+  });
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('.heatmap-overlay')).toHaveAttribute('src', /.+/);
+
+  const toggle = page.locator('[data-testid="heatmap-lines"]');
+  await expect(toggle).toBeChecked();
+
+  const pane = page.locator('.leaflet-route-lines-pane');
+  await expect.poll(() => pane.count()).toBe(1);
+  await expect.poll(() => pane.locator('canvas').count()).toBe(1);
+  await expect
+    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
+    .not.toBe('none');
+
+  await toggle.uncheck();
+  await expect
+    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
+    .toBe('none');
+
+  await toggle.check();
+  await expect
+    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
+    .not.toBe('none');
 });
 
 test('tab switches do not leak Leaflet maps', async ({ page }) => {

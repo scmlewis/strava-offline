@@ -52,5 +52,5 @@ npm run build
 - Cross-device sync: no backend, so switching machines requires re-import (use the backup JSON to move data).
 - GPX HR namespace uses several common tags as fallbacks; an individual device's export with a different namespace may not yield a true histogram and will fall back to the avg-HR proxy.
 - Route mini-maps are polyline shapes — no basemap or navigation (deliberate MVP scope); the Heatmap tab adds a dark basemap.
-- The heatmap basemap fetches CARTO/OSM tiles online; viewed tiles are cached, and the heat layer renders without them.
+- The heatmap basemap fetches Esri/OSM tiles online; viewed tiles are cached, and the heat layer renders without them.
 - TSS/CTL are HR-based estimates (no power meter); with FTHR they switch to HRR-based intensity.

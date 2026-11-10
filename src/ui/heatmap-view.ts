@@ -4,11 +4,15 @@ import type { Activity } from '../data/types.ts';
 import {
   applyHeatRamp,
   computeHeatBounds,
+  DEFAULT_HEATMAP_PREFS,
   HEATMAP_PREFS_KEY,
   heatQuantile,
   HOT_QUANTILE,
   lonLatToWorld,
+  MAX_HEAT_OPACITY,
   MAX_RASTER,
+  MIN_HEAT_OPACITY,
+  normalisePrefs,
   sanitizeRoutes,
   shouldRefit,
   sportTypes,
@@ -22,9 +26,6 @@ import {
 import { t } from '../i18n.ts';
 import { icon } from '../icons.ts';
 
-const DEFAULT_PREFS: HeatmapPrefs = { opacity: 0.85, basemap: true, sports: [] };
-const MIN_OPACITY = 0.25;
-const MAX_OPACITY = 1;
 /** Zoomed-out raster scale: 256 px tiles at 2^14 world pixels keeps trails crisp. */
 const RASTER_SCALE = 256 * 2 ** 14;
 const MIN_RASTER = 512;
@@ -33,12 +34,25 @@ const MIN_SPAN = 1e-9;
 /** Tile errors before the "basemap unavailable" note is shown (single failed tiles are noise). */
 const TILE_ERROR_THRESHOLD = 4;
 
+/** Route-outline style: thin warm white, faint enough that the heat glow still leads. */
+const ROUTE_LINE_COLOR = '#ffe4c4';
+const ROUTE_LINE_WEIGHT = 1.1;
+const ROUTE_LINE_OPACITY = 0.4;
+/** Dark casing beneath each outline so paths stay visible across saturated white heat. */
+const ROUTE_CASING_COLOR = '#1a1008';
+const ROUTE_CASING_OPACITY = 0.45;
+const ROUTE_CASING_EXTRA = 1.3;
+/** Pane name; Leaflet derives the `.leaflet-route-lines-pane` class from it. */
+const ROUTE_LINES_PANE = 'route-lines';
+
 /** Live map field; Leaflet attaches to this element once it has been laid out. */
 let mapEl: HTMLElement | null = null;
-let prefs: HeatmapPrefs = { ...DEFAULT_PREFS, sports: [] };
+let prefs: HeatmapPrefs = { ...DEFAULT_HEATMAP_PREFS };
 let map: L.Map | null = null;
 let tileLayer: L.TileLayer | null = null;
 let overlay: L.ImageOverlay | null = null;
+let routeLayers: L.Polyline[] = [];
+let linesPane: HTMLElement | null = null;
 let blobUrl: string | null = null;
 let noteEl: HTMLElement | null = null;
 let renderingEl: HTMLElement | null = null;
@@ -71,32 +85,18 @@ function cancelRenderFrames(): void {
 let savedView: MapView | null = null;
 
 function clampOpacity(value: number): number {
-  if (!Number.isFinite(value)) return DEFAULT_PREFS.opacity;
-  return Math.min(MAX_OPACITY, Math.max(MIN_OPACITY, value));
+  if (!Number.isFinite(value)) return DEFAULT_HEATMAP_PREFS.opacity;
+  return Math.min(MAX_HEAT_OPACITY, Math.max(MIN_HEAT_OPACITY, value));
 }
 
 /** Read `heatmapPrefs`, falling back to defaults on missing or malformed storage. */
 function loadPrefs(): HeatmapPrefs {
   try {
     const raw = localStorage.getItem(HEATMAP_PREFS_KEY);
-    if (!raw) return { ...DEFAULT_PREFS, sports: [] };
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      return { ...DEFAULT_PREFS, sports: [] };
-    }
-    const obj = parsed as Record<string, unknown>;
-    return {
-      opacity:
-        typeof obj.opacity === 'number'
-          ? clampOpacity(obj.opacity)
-          : DEFAULT_PREFS.opacity,
-      basemap: typeof obj.basemap === 'boolean' ? obj.basemap : DEFAULT_PREFS.basemap,
-      sports: Array.isArray(obj.sports)
-        ? obj.sports.filter((s): s is string => typeof s === 'string')
-        : [],
-    };
+    if (!raw) return { ...DEFAULT_HEATMAP_PREFS };
+    return normalisePrefs(JSON.parse(raw));
   } catch {
-    return { ...DEFAULT_PREFS, sports: [] };
+    return { ...DEFAULT_HEATMAP_PREFS };
   }
 }
 
@@ -167,8 +167,10 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
   const octx = out.getContext('2d');
   if (!sctx || !octx) return out;
 
-  const lineWidth = Math.min(14, Math.max(4, Math.min(width, height) / 180));
-  sctx.globalAlpha = 0.06;
+  const lineWidth = Math.min(9, Math.max(2.5, Math.min(width, height) / 260));
+  // Low per-route alpha keeps hundreds of overlapping routes from saturating to white;
+  // the dedicated route-line layer above the heat is what makes paths traceable.
+  sctx.globalAlpha = 0.035;
   sctx.strokeStyle = '#fff';
   sctx.lineWidth = lineWidth;
   sctx.lineCap = 'round';
@@ -208,7 +210,7 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
     octx.drawImage(source, -1, 0);
     octx.drawImage(source, 1, 0);
   } else {
-    octx.filter = `blur(${Math.max(1, Math.round(lineWidth * 0.8))}px)`;
+    octx.filter = `blur(${Math.max(1, Math.round(lineWidth * 0.7))}px)`;
     octx.drawImage(source, 0, 0);
     octx.filter = 'none';
   }
@@ -275,11 +277,52 @@ function updateHeat(routes: SanitizedRoute[], bounds: HeatBounds): void {
   );
 }
 
-/** Builds the CARTO tile layer and reveals the offline note after repeated tile errors. */
+/**
+ * Rebuilds the non-interactive multi-polyline that traces every visible route. It lives
+ * in a pane above the heat overlay so individual paths stay crisp through pan/zoom.
+ */
+function updateRouteLines(routes: SanitizedRoute[]): void {
+  if (!map) return;
+  for (const layer of routeLayers) map.removeLayer(layer);
+  routeLayers = [];
+  if (!prefs.lines) return;
+
+  const latlngs = routes
+    .filter((route) => route.points.length >= 2)
+    .map((route) => route.points.map(([lat, lon]) => [lat, lon] as [number, number]));
+  if (latlngs.length === 0) return;
+
+  // Casing first, then the warm line, so both render into the same pane canvas in order.
+  const casing = L.polyline(latlngs, {
+    pane: ROUTE_LINES_PANE,
+    color: ROUTE_CASING_COLOR,
+    weight: ROUTE_LINE_WEIGHT + ROUTE_CASING_EXTRA,
+    opacity: ROUTE_CASING_OPACITY,
+    interactive: false,
+  });
+  const line = L.polyline(latlngs, {
+    pane: ROUTE_LINES_PANE,
+    color: ROUTE_LINE_COLOR,
+    weight: ROUTE_LINE_WEIGHT,
+    opacity: ROUTE_LINE_OPACITY,
+    interactive: false,
+  });
+  casing.addTo(map);
+  line.addTo(map);
+  routeLayers = [casing, line];
+}
+
+/** Shows or hides the route-outline pane without rebuilding the polyline. */
+function applyLinesVisibility(): void {
+  if (linesPane) linesPane.style.display = prefs.lines ? '' : 'none';
+}
+
+/** Builds the Esri dark tile layer and reveals the offline note after repeated tile errors. */
 function buildTiles(): L.TileLayer {
   const layer = L.tileLayer(TILE_URL, {
-    subdomains: 'abcd',
-    maxZoom: 20,
+    // Esri serves World Dark Gray Canvas up to z16; Leaflet upscales beyond that.
+    maxNativeZoom: 16,
+    maxZoom: 18,
     attribution: TILE_ATTRIBUTION,
   });
   tileErrors = 0;
@@ -348,6 +391,13 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
 
   const tiles = buildTiles();
   if (prefs.basemap) tiles.addTo(map);
+
+  // Dedicated pane above the image overlay (z 400) keeps outlines on top of the glow.
+  linesPane = map.createPane(ROUTE_LINES_PANE);
+  linesPane.style.zIndex = '450';
+  linesPane.style.pointerEvents = 'none';
+  applyLinesVisibility();
+  updateRouteLines(routes);
 
   updateHeat(routes, bounds);
 }
@@ -418,8 +468,8 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   opacityLabel.textContent = t('heatmap_opacity');
   const opacity = el('input', 'heatmap-opacity', 'heatmap-opacity');
   opacity.type = 'range';
-  opacity.min = String(MIN_OPACITY);
-  opacity.max = String(MAX_OPACITY);
+  opacity.min = String(MIN_HEAT_OPACITY);
+  opacity.max = String(MAX_HEAT_OPACITY);
   opacity.step = '0.05';
   opacity.value = String(prefs.opacity);
   opacity.setAttribute('aria-label', t('heatmap_opacity'));
@@ -434,7 +484,16 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   basemapLabel.textContent = t('heatmap_basemap');
   basemapField.append(basemap, basemapLabel);
 
-  controls.append(opacityField, basemapField);
+  const linesField = el('label', 'heatmap-toggle');
+  const lines = el('input', 'heatmap-lines', 'heatmap-lines');
+  lines.type = 'checkbox';
+  lines.checked = prefs.lines;
+  lines.setAttribute('aria-label', t('heatmap_lines'));
+  const linesLabel = el('span', 'heatmap-toggle-label');
+  linesLabel.textContent = t('heatmap_lines');
+  linesField.append(lines, linesLabel);
+
+  controls.append(opacityField, basemapField, linesField);
   panel.appendChild(controls);
 
   const hint = el('p', 'heatmap-hint');
@@ -514,10 +573,12 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
         URL.revokeObjectURL(blobUrl);
         blobUrl = null;
       }
+      updateRouteLines([]);
       return;
     }
     hideEmpty();
     if (!map) return;
+    updateRouteLines(list);
     const filteredBounds = computeHeatBounds(list);
     if (filteredBounds) updateHeat(list, filteredBounds);
   }
@@ -551,6 +612,12 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
     if (!map || !tileLayer) return;
     if (prefs.basemap) tileLayer.addTo(map);
     else map.removeLayer(tileLayer);
+  });
+  lines.addEventListener('change', () => {
+    prefs.lines = lines.checked;
+    savePrefs();
+    updateRouteLines(visibleRoutes());
+    applyLinesVisibility();
   });
 
   tab.appendChild(field);
@@ -602,6 +669,8 @@ export function destroyHeatmap(): void {
     map = null;
   }
   overlay = null;
+  routeLayers = [];
+  linesPane = null;
   tileLayer = null;
   tileErrors = 0;
   noteEl = null;

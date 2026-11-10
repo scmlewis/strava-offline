@@ -3,6 +3,10 @@
 Date: 2026-11-07
 Status: approved (2026-11-08)
 
+> **Superseded in part (2026-11-10):** the CARTO basemap now requires an API key, so
+> the implementation uses keyless Esri Dark Gray Canvas tiles and adds a route-outline
+> layer. See [2026-11-10-heatmap-basemap-and-outlines-design.md](./2026-11-10-heatmap-basemap-and-outlines-design.md).
+
 ## Intent
 
 Add a Strava-style personal heatmap: every GPS track in the user's local history drawn as a glowing density layer over a dark basemap, so recurring routes and "hot spots" are visible at a glance. The user asked for an interface "more or less like the original Strava one", and accepted that the map may fetch basemap tiles online.

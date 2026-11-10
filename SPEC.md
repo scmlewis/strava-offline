@@ -1,6 +1,6 @@
 # Strava Offline Analyzer — Recreation Spec
 
-A local-first PWA. User drags in a Strava export (zip/csv/gpx/fit), everything is parsed and stored in the browser (IndexedDB). No backend, no accounts. No network calls except optional CARTO basemap tiles (Workbox-cached). All analysis runs client-side.
+A local-first PWA. User drags in a Strava export (zip/csv/gpx/fit), everything is parsed and stored in the browser (IndexedDB). No backend, no accounts. No network calls except optional Esri basemap tiles (Workbox-cached). All analysis runs client-side.
 
 **Stack:** Vanilla TypeScript + Vite, Tailwind (utility classes) + hand-written CSS modules, uPlot for charts, Leaflet (heatmap basemap), Dexie (IndexedDB), JSZip, PapaParse, pako, fit-file-parser. No React/framework — DOM is built imperatively. Vitest (unit) + Playwright (e2e). PWA via vite-plugin-pwa (service worker, installable, works offline). Deployed to GitHub Pages at `https://scmlewis.github.io/strava-offline/` (build must use base `/strava-offline/`).
 
@@ -68,7 +68,7 @@ interface Activity {
 
 **IndexedDB:** one Dexie DB `strava-offline`, version 1, table `activities` keyed by `id`, indexes `ts, type, date`. `saveActivities` = `bulkPut` (re-import is idempotent). `loadActivities` = orderBy ts desc, skips corrupt rows with console.warn.
 
-**localStorage keys:** `strava-offline:zones`, `goals`, `unitPref`, `prefs`, `filterCollapsed`, `heatmapPrefs`, `theme`. All reads/writes try/catch → fall back to defaults. `heatmapPrefs` (`{ opacity: number; basemap: boolean; sports: string[] }`, defaults `{ opacity: 0.85, basemap: true, sports: [] }`) is cosmetic — added to the clear-settings list but **not** part of the backup bundle, like `theme`.
+**localStorage keys:** `strava-offline:zones`, `goals`, `unitPref`, `prefs`, `filterCollapsed`, `heatmapPrefs`, `theme`. All reads/writes try/catch → fall back to defaults. `heatmapPrefs` (`{ opacity: number; basemap: boolean; sports: string[]; lines: boolean }`, defaults `{ opacity: 0.85, basemap: true, sports: [], lines: true }`) is cosmetic — added to the clear-settings list but **not** part of the backup bundle, like `theme`.
 
 **Backup bundle (JSON export/import):**
 ```ts
@@ -146,7 +146,7 @@ DEFAULT_ZONES = {
 - **Climb score:** `round(gain * (1 + min(gain/(distKm*1000), 0.15) * 6))`; requires gain>0, dist>0.
 - **Streaks:** unique activity dates; longest = max consecutive-day run; current = consecutive days ending today/yesterday, else 0.
 - **Calendar heatmap:** day cells, levels by quantiles of daily km: [q50, q80, q92, q98] → levels 1–4 (0 = no activity); column offset uses `prefs.weekStart` (sun/mon).
-- **Route heatmap pipeline (`src/data/heatmap.ts` + `src/ui/heatmap-view.ts`):** `sanitizeRoutes` drops non-finite/null-island/spiking points (median-centre haversine ≤ 100 km, |lat| ≤ 85) and keeps activities with ≥2 cleaned points; `computeHeatBounds` pads the bbox (min span 0.002° per axis, default 4% pad). Routes are projected to Web-Mercator canvas pixels (longest side `min(2048, max(512, spanPx@z14))`), white strokes at `alpha 0.06` / round caps, blurred, then recoloured in place by `applyHeatRamp`: `hot = heatQuantile(alpha>0, 0.98)`, `v = clamp(a / max(hot,8),0,1) ** 0.75`, pixels with `a<3` transparent, 7-stop ascent from `rgba(252,76,2,0)` to `rgba(255,246,200,255)`. The canvas becomes a blob → `L.imageOverlay`; the previous object URL is revoked on re-render/teardown. Sport chips filter route-bearing types locally only (frequency then alphabetical), and opacity/basemap/sports persist in `heatmapPrefs`. The Leaflet viewport is kept across tab switches via module-level `savedView`, refit only when it no longer intersects the new heat bounds (`shouldRefit`).
+- **Route heatmap pipeline (`src/data/heatmap.ts` + `src/ui/heatmap-view.ts`):** `sanitizeRoutes` drops non-finite/null-island/spiking points (median-centre haversine ≤ 100 km, |lat| ≤ 85) and keeps activities with ≥2 cleaned points; `computeHeatBounds` pads the bbox (min span 0.002° per axis, default 4% pad). Routes are projected to Web-Mercator canvas pixels (longest side `min(2048, max(512, spanPx@z14))`), white strokes at `alpha 0.035` / round caps, blurred, then recoloured in place by `applyHeatRamp`: `hot = heatQuantile(alpha>0, 0.98)`, `v = clamp(a / max(hot,8),0,1) ** 0.9`, pixels with `a<3` transparent, 7-stop ascent from `rgba(252,76,2,0)` to `rgba(255,246,200,255)`. The canvas becomes a blob → `L.imageOverlay`; the previous object URL is revoked on re-render/teardown. A separate non-interactive multi-polyline in a `route-lines` pane above the overlay traces every visible route (warm line over a dark casing) and follows the sport filter; `lines` toggles it. Sport chips filter route-bearing types locally only (frequency then alphabetical), and opacity/basemap/lines/sports persist in `heatmapPrefs`. The Leaflet viewport is kept across tab switches via module-level `savedView`, refit only when it no longer intersects the new heat bounds (`shouldRefit`).
 
 ---
 
@@ -173,7 +173,7 @@ Filters = { type, range:'all'|'90'|'180'|'365', from, to, minKm, maxKm, minGain,
 | Tab | Content |
 |---|---|
 | `overview` | Stat cards (activities, total distance+avg, moving time, total climb, Easy% vs goal, Form/TSB+CTL, date range), activity heatmap, streak bar, weekly-goal box, grid of weekly-volume chart + training-load chart |
-| `heatmap` | Leaflet map with a CANVAS heat raster over CARTO dark tiles: title + route count, sport chips (multi-select, local only), opacity slider, basemap toggle, legend + "rendered locally" hint, "Fit routes" control; falls back to heat-on-dark with a note when tiles fail; empty state shows `routes_hint` |
+| `heatmap` | Leaflet map with a CANVAS heat raster over keyless Esri Dark Gray Canvas tiles: title + route count, sport chips (multi-select, local only), opacity slider, basemap and route-lines toggles, legend + "rendered locally" hint, "Fit routes" control; falls back to heat-on-dark with a note when tiles fail; empty state shows `routes_hint` |
 | `volume` | Weekly volume chart (last 16 wks) + route mini-maps (first 12 with routes) |
 | `load` | CTL/ATL/TSB chart + pace trend chart |
 | `zones` | HR zone distribution bars (color-coded per zone) |

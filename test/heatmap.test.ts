@@ -2,11 +2,14 @@ import { describe, expect, it } from 'vitest';
 import {
   MAX_POINT_RADIUS_KM,
   MIN_SPAN_DEG,
+  TILE_ATTRIBUTION,
+  TILE_URL,
   applyHeatRamp,
   computeHeatBounds,
   haversineKm,
   heatQuantile,
   lonLatToWorld,
+  normalisePrefs,
   sanitizeRoutes,
   shouldRefit,
   sportTypes,
@@ -276,5 +279,60 @@ describe('shouldRefit', () => {
 
   it('refits when the view has moved to another region', () => {
     expect(shouldRefit({ center: [48.8566, 2.3522], zoom: 13 }, bounds, size)).toBe(true);
+  });
+});
+
+describe('basemap tiles', () => {
+  it('uses keyless Esri dark canvas tiles in z/y/x order', () => {
+    expect(TILE_URL).toBe(
+      'https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',
+    );
+    expect(TILE_URL).not.toMatch(/\{s\}/);
+    expect(TILE_URL).not.toMatch(/[?&]key=/);
+  });
+
+  it('credits Esri and OpenStreetMap in the attribution', () => {
+    expect(TILE_ATTRIBUTION).toContain('Esri');
+    expect(TILE_ATTRIBUTION).toContain('OpenStreetMap');
+    expect(TILE_ATTRIBUTION).not.toContain('CARTO');
+  });
+});
+
+describe('normalisePrefs', () => {
+  it('returns the documented defaults for missing or malformed input', () => {
+    expect(normalisePrefs(null)).toEqual({
+      opacity: 0.85,
+      basemap: true,
+      sports: [],
+      lines: true,
+    });
+    expect(normalisePrefs('nope')).toEqual({
+      opacity: 0.85,
+      basemap: true,
+      sports: [],
+      lines: true,
+    });
+  });
+
+  it('keeps valid values, clamps opacity, and drops invalid fields', () => {
+    expect(
+      normalisePrefs({
+        opacity: 0.1,
+        basemap: false,
+        sports: ['Run', 7, 'Ride'],
+        lines: false,
+      }),
+    ).toEqual({
+      opacity: 0.25,
+      basemap: false,
+      sports: ['Run', 'Ride'],
+      lines: false,
+    });
+  });
+
+  it('falls back per field instead of discarding the whole prefs object', () => {
+    expect(
+      normalisePrefs({ opacity: 'high', basemap: 'yes', sports: 'Run', lines: 'off' }),
+    ).toEqual({ opacity: 0.85, basemap: true, sports: [], lines: true });
   });
 });
