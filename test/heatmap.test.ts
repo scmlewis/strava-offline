@@ -267,7 +267,7 @@ describe('line heat scale', () => {
   });
 
   it('returns opaque warm RGB endpoints and clamps out-of-range values', () => {
-    expect(heatColor(0)).toEqual([107, 18, 0]);
+    expect(heatColor(0)).toEqual([88, 12, 8]);
     expect(heatColor(1)).toEqual([255, 246, 200]);
     expect(heatColor(-5)).toEqual(heatColor(0));
     expect(heatColor(5)).toEqual(heatColor(1));

@@ -28,11 +28,11 @@ export const HEAT_MAX_COUNT = 64;
 
 /** Opaque line-heat ramp from a muted single-use red to near-white. */
 export const HEAT_RAMP: Array<{ at: number; rgb: [number, number, number] }> = [
-  { at: 0, rgb: [107, 18, 0] },
-  { at: 0.2, rgb: [168, 42, 0] },
-  { at: 0.4, rgb: [225, 70, 4] },
-  { at: 0.62, rgb: [252, 118, 22] },
-  { at: 0.8, rgb: [255, 176, 64] },
+  { at: 0, rgb: [88, 12, 8] },
+  { at: 0.2, rgb: [138, 24, 10] },
+  { at: 0.4, rgb: [196, 48, 8] },
+  { at: 0.62, rgb: [240, 96, 16] },
+  { at: 0.8, rgb: [255, 168, 56] },
   { at: 1, rgb: [255, 246, 200] },
 ];
 

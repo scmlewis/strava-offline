@@ -41,8 +41,8 @@ const CHUNK_PX = 8;
 /** Number of colour buckets used to keep drawing to a few dozen strokes. */
 const HEAT_LEVELS = 32;
 /** Glow drawn under each line: width multiplier and alpha. */
-const GLOW_WIDTH_MULT = 3;
-const GLOW_ALPHA = 0.16;
+const GLOW_WIDTH_MULT = 4;
+const GLOW_ALPHA = 0.28;
 
 /** Live map field; Leaflet attaches to this element once it has been laid out. */
 let mapEl: HTMLElement | null = null;
@@ -247,19 +247,37 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
     const [r, g, b] = heatColor((level + 0.5) / HEAT_LEVELS);
     return `rgb(${r}, ${g}, ${b})`;
   };
-  const coreWidth = Math.min(3, Math.max(1.2, Math.min(width, height) / 700));
-  ctx.lineCap = 'round';
-  ctx.lineJoin = 'round';
+  // Scale with the raster so the on-screen weight stays constant: the overlay is drawn
+  // at up to 2048 px and Leaflet then fits it to the viewport, downscaling by 2–4×.
+  const coreWidth = Math.min(8, Math.max(2, longSide / 280));
 
-  // Glow first so every core stays crisp on top.
-  ctx.globalAlpha = GLOW_ALPHA;
-  ctx.lineWidth = coreWidth * GLOW_WIDTH_MULT;
-  for (let level = 0; level < HEAT_LEVELS; level++) {
-    ctx.strokeStyle = colour(level);
-    ctx.stroke(paths[level]);
+  // Glow is built on its own layer and composited once. Stroking it straight onto the
+  // output would re-accumulate alpha for every overlapping route, turning busy roads
+  // into opaque slabs; a single pass keeps the halo flat while the core carries density.
+  const glow = document.createElement('canvas');
+  glow.width = width;
+  glow.height = height;
+  const gctx = glow.getContext('2d');
+  if (gctx) {
+    gctx.lineCap = 'round';
+    gctx.lineJoin = 'round';
+    gctx.lineWidth = coreWidth * GLOW_WIDTH_MULT;
+    for (let level = 0; level < HEAT_LEVELS; level++) {
+      gctx.strokeStyle = colour(level);
+      gctx.stroke(paths[level]);
+    }
+
+    ctx.save();
+    if (typeof ctx.filter === 'string') {
+      ctx.filter = `blur(${Math.max(1, Math.round(coreWidth * 1.2))}px)`;
+    }
+    ctx.globalAlpha = GLOW_ALPHA;
+    ctx.drawImage(glow, 0, 0);
+    ctx.restore();
   }
 
-  ctx.globalAlpha = 1;
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
   ctx.lineWidth = coreWidth;
   for (let level = 0; level < HEAT_LEVELS; level++) {
     ctx.strokeStyle = colour(level);
