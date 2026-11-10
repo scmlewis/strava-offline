@@ -1,12 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import {
+  HEAT_MAX_COUNT,
   MAX_POINT_RADIUS_KM,
   MIN_SPAN_DEG,
   TILE_ATTRIBUTION,
   TILE_URL,
   applyHeatRamp,
   computeHeatBounds,
+  densityValue,
   haversineKm,
+  heatColor,
   heatQuantile,
   lonLatToWorld,
   normalisePrefs,
@@ -334,5 +337,27 @@ describe('normalisePrefs', () => {
     expect(
       normalisePrefs({ opacity: 'high', basemap: 'yes', sports: 'Run', lines: 'off' }),
     ).toEqual({ opacity: 0.85, basemap: true, sports: [], lines: true });
+  });
+});
+
+describe('line heat scale', () => {
+  it('maps no overlap to cold and the maximum count to hot', () => {
+    expect(densityValue(0)).toBe(0);
+    expect(densityValue(HEAT_MAX_COUNT)).toBeCloseTo(1, 5);
+    expect(densityValue(HEAT_MAX_COUNT * 4)).toBe(1);
+  });
+
+  it('brightens monotonically with overlap count', () => {
+    const values = [1, 2, 4, 8, 16, 32].map(densityValue);
+    for (let i = 1; i < values.length; i++) {
+      expect(values[i]).toBeGreaterThan(values[i - 1]);
+    }
+  });
+
+  it('returns opaque warm RGB endpoints and clamps out-of-range values', () => {
+    expect(heatColor(0)).toEqual([107, 18, 0]);
+    expect(heatColor(1)).toEqual([255, 246, 200]);
+    expect(heatColor(-5)).toEqual(heatColor(0));
+    expect(heatColor(5)).toEqual(heatColor(1));
   });
 });

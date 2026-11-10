@@ -10,7 +10,7 @@ export const MIN_SPAN_DEG = 0.002;
 export const HOT_QUANTILE = 0.98;
 
 /** Gamma applied to normalised heat, lifting mid-density trails away from the cold end. */
-export const GAMMA = 0.9;
+export const GAMMA = 0.85;
 
 /** Longest raster edge, capping buffer size on very large viewports. */
 export const MAX_RASTER = 2048;
@@ -36,6 +36,41 @@ export const RAMP: Array<{ at: number; rgba: [number, number, number, number] }>
   { at: 0.9, rgba: [255, 205, 90, 255] },
   { at: 1, rgba: [255, 246, 200, 255] },
 ];
+
+/** Overlap count treated as the hottest line; higher counts clamp. */
+export const HEAT_MAX_COUNT = 64;
+
+/** Opaque line-heat ramp from a muted single-use red to near-white. */
+export const HEAT_RAMP: Array<{ at: number; rgb: [number, number, number] }> = [
+  { at: 0, rgb: [107, 18, 0] },
+  { at: 0.2, rgb: [168, 42, 0] },
+  { at: 0.4, rgb: [225, 70, 4] },
+  { at: 0.62, rgb: [252, 118, 22] },
+  { at: 0.8, rgb: [255, 176, 64] },
+  { at: 1, rgb: [255, 246, 200] },
+];
+
+/** Perceptual value for a corridor overlap count, independent of the filtered set. */
+export function densityValue(count: number): number {
+  const safe = Math.max(0, count);
+  return Math.min(1, Math.log1p(safe) / Math.log1p(HEAT_MAX_COUNT)) ** GAMMA;
+}
+
+/** Interpolated opaque RGB for a normalised heat value. */
+export function heatColor(value: number): [number, number, number] {
+  const v = Math.min(1, Math.max(0, value));
+  let upper = 1;
+  while (upper < HEAT_RAMP.length - 1 && HEAT_RAMP[upper].at < v) upper++;
+  const hi = HEAT_RAMP[upper];
+  const lo = HEAT_RAMP[upper - 1];
+  const span = hi.at - lo.at;
+  const t = span === 0 ? 0 : (v - lo.at) / span;
+  return [0, 1, 2].map((i) => Math.round(lo.rgb[i] + (hi.rgb[i] - lo.rgb[i]) * t)) as [
+    number,
+    number,
+    number,
+  ];
+}
 
 const EARTH_RADIUS_KM = 6371;
 const DEG_TO_RAD = Math.PI / 180;
