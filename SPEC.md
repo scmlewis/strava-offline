@@ -26,7 +26,7 @@ src/
     fit.ts          # gzipped FIT parser
     ingest.worker.ts / ingestClient.ts  # web worker + main-thread fallback
     zones.ts        # zone config + defaults + HR→zone + intensity
-    heatmap.ts      # route sanitising, bounds, tile URL, heat ramp, sport counts, heatmapPrefs
+    heatmap.ts      # route sanitising, bounds, tile URL, overlap heat scale, sport counts, heatmapPrefs
     analyze.ts      # ALL metric formulas (TSS, CTL/ATL/TSB, PR, Riegel, VDOT, etc.)
     dashboard.ts    # tab rendering, cards, charts, tables, activity detail drawer
   ui/
@@ -68,7 +68,7 @@ interface Activity {
 
 **IndexedDB:** one Dexie DB `strava-offline`, version 1, table `activities` keyed by `id`, indexes `ts, type, date`. `saveActivities` = `bulkPut` (re-import is idempotent). `loadActivities` = orderBy ts desc, skips corrupt rows with console.warn.
 
-**localStorage keys:** `strava-offline:zones`, `goals`, `unitPref`, `prefs`, `filterCollapsed`, `heatmapPrefs`, `theme`. All reads/writes try/catch → fall back to defaults. `heatmapPrefs` (`{ opacity: number; basemap: boolean; sports: string[]; lines: boolean }`, defaults `{ opacity: 0.85, basemap: true, sports: [], lines: true }`) is cosmetic — added to the clear-settings list but **not** part of the backup bundle, like `theme`.
+**localStorage keys:** `strava-offline:zones`, `goals`, `unitPref`, `prefs`, `filterCollapsed`, `heatmapPrefs`, `theme`. All reads/writes try/catch → fall back to defaults. `heatmapPrefs` (`{ opacity: number; basemap: boolean; sports: string[] }`, defaults `{ opacity: 0.85, basemap: true, sports: [] }`) is cosmetic — added to the clear-settings list but **not** part of the backup bundle, like `theme`.
 
 **Backup bundle (JSON export/import):**
 ```ts
@@ -146,7 +146,7 @@ DEFAULT_ZONES = {
 - **Climb score:** `round(gain * (1 + min(gain/(distKm*1000), 0.15) * 6))`; requires gain>0, dist>0.
 - **Streaks:** unique activity dates; longest = max consecutive-day run; current = consecutive days ending today/yesterday, else 0.
 - **Calendar heatmap:** day cells, levels by quantiles of daily km: [q50, q80, q92, q98] → levels 1–4 (0 = no activity); column offset uses `prefs.weekStart` (sun/mon).
-- **Route heatmap pipeline (`src/data/heatmap.ts` + `src/ui/heatmap-view.ts`):** `sanitizeRoutes` drops non-finite/null-island/spiking points (median-centre haversine ≤ 100 km, |lat| ≤ 85) and keeps activities with ≥2 cleaned points; `computeHeatBounds` pads the bbox (min span 0.002° per axis, default 4% pad). Routes are projected to Web-Mercator canvas pixels (longest side `min(2048, max(512, spanPx@z14))`), white strokes at `alpha 0.035` / round caps, blurred, then recoloured in place by `applyHeatRamp`: `hot = heatQuantile(alpha>0, 0.98)`, `v = clamp(a / max(hot,8),0,1) ** 0.9`, pixels with `a<3` transparent, 7-stop ascent from `rgba(252,76,2,0)` to `rgba(255,246,200,255)`. The canvas becomes a blob → `L.imageOverlay`; the previous object URL is revoked on re-render/teardown. A separate non-interactive multi-polyline in a `route-lines` pane above the overlay traces every visible route (warm line over a dark casing) and follows the sport filter; `lines` toggles it. Sport chips filter route-bearing types locally only (frequency then alphabetical), and opacity/basemap/lines/sports persist in `heatmapPrefs`. The Leaflet viewport is kept across tab switches via module-level `savedView`, refit only when it no longer intersects the new heat bounds (`shouldRefit`).
+- **Route heatmap pipeline (`src/data/heatmap.ts` + `src/ui/heatmap-view.ts`):** `sanitizeRoutes` drops non-finite/null-island/spiking points (median-centre haversine ≤ 100 km, |lat| ≤ 85) and keeps activities with ≥2 cleaned points; `computeHeatBounds` pads the bbox (min span 0.002° per axis, default 4% pad). Routes are projected to Web-Mercator canvas pixels (longest side `min(2048, max(512, spanPx@z14))`), and a parallel overlap grid (longest side 1024 cells, 1-cell corridor) counts how many **distinct** routes touch each corridor: every route walks its segments with a DDA, stamps a per-route id so a route is counted at most once per cell, then adds one to each newly touched cell. Each segment is then cut into ≤8 px pieces and coloured from its midpoint count through `densityValue(count) = min(1, log1p(count)/log1p(64)) ** 0.85`, bucketed into 32 `Path2D` levels and mapped through the opaque 6-stop `heatColor` ramp (`#580c08` → `#8a180a` → `#c43008` → `#f06010` → `#ffa838` → `#fff6c8`). Each bucket is drawn as two passes: a wide (`4×` core) blurred glow on its own layer, composited once at `alpha 0.28` so overlapping routes cannot accumulate into opaque slabs, under a full-opacity core stroke sized from the raster long side (`clamp(longSide/280, 2, 8)` px) so on-screen weight is resolution-independent, with round caps/joins. The absolute log scale is independent of the filtered set, so one route stays a dark muted red while overlapping corridors brighten toward near-white. The canvas becomes a blob → `L.imageOverlay`; the previous object URL is revoked on re-render/teardown. Sport chips filter route-bearing types locally only (frequency then alphabetical), and opacity/basemap/sports persist in `heatmapPrefs`. The Leaflet viewport is kept across tab switches via module-level `savedView`, refit only when it no longer intersects the new heat bounds (`shouldRefit`).
 
 ---
 
@@ -173,7 +173,7 @@ Filters = { type, range:'all'|'90'|'180'|'365', from, to, minKm, maxKm, minGain,
 | Tab | Content |
 |---|---|
 | `overview` | Stat cards (activities, total distance+avg, moving time, total climb, Easy% vs goal, Form/TSB+CTL, date range), activity heatmap, streak bar, weekly-goal box, grid of weekly-volume chart + training-load chart |
-| `heatmap` | Leaflet map with a CANVAS heat raster over keyless Esri Dark Gray Canvas tiles: title + route count, sport chips (multi-select, local only), opacity slider, basemap and route-lines toggles, legend + "rendered locally" hint, "Fit routes" control; falls back to heat-on-dark with a note when tiles fail; empty state shows `routes_hint` |
+| `heatmap` | Leaflet map with density-coloured glowing route lines over keyless Esri Dark Gray Canvas tiles: title + route count, sport chips (multi-select, local only), opacity slider, basemap toggle, legend + "brighter lines = more overlapping routes" and "rendered locally" hints, "Fit routes" control; falls back to heat-on-dark with a note when tiles fail; empty state shows `routes_hint` |
 | `volume` | Weekly volume chart (last 16 wks) + route mini-maps (first 12 with routes) |
 | `load` | CTL/ATL/TSB chart + pace trend chart |
 | `zones` | HR zone distribution bars (color-coded per zone) |

@@ -1,5 +1,9 @@
 # Heatmap basemap and route outlines — short design
 
+> **Superseded:** the separate route-outline layer, its casing, pane, and `lines` preference
+> were removed by `2026-11-10-line-density-heatmap-design.md`, which draws density-coloured
+> glowing route lines in the heat canvas itself. The basemap decision below still stands.
+
 Date: 2026-11-10
 Status: approved by the product owner (chat: "go with your suggestion")
 
