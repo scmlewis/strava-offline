@@ -199,7 +199,7 @@
   width: 96px;
   height: 8px;
   border-radius: var(--shape-full);
-  background: linear-gradient(90deg, #3a1d0f, #fc4c02, #ffb547, #fff3b0);
+  background: linear-gradient(90deg, #6b1200, #a82a00, #e14604, #fc7616, #ffb040, #fff6c8);
 }
 
 .heatmap-empty {

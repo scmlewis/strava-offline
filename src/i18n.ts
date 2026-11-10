@@ -121,7 +121,7 @@ const EN: Dict = {
   heatmap_routes_many: '{n} routes',
   heatmap_opacity: 'Opacity',
   heatmap_basemap: 'Basemap',
-  heatmap_lines: 'Route lines',
+  heatmap_density: 'Brighter lines = more overlapping routes',
   heatmap_fit: 'Fit routes',
   heatmap_less: 'Less',
   heatmap_more: 'More',

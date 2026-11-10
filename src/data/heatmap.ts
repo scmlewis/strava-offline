@@ -6,10 +6,7 @@ export const MAX_POINT_RADIUS_KM = 100;
 /** Bounds are expanded to at least this many degrees per axis so tiny routes stay visible. */
 export const MIN_SPAN_DEG = 0.002;
 
-/** Alpha quantile used as the top of the heat scale so a few dense pixels cannot wash out the map. */
-export const HOT_QUANTILE = 0.98;
-
-/** Gamma applied to normalised heat, lifting mid-density trails away from the cold end. */
+/** Gamma applied to normalised overlap density, lifting lightly used paths away from the cold end. */
 export const GAMMA = 0.85;
 
 /** Longest raster edge, capping buffer size on very large viewports. */
@@ -25,17 +22,6 @@ export const TILE_URL =
 /** Attribution required by the Esri / OpenStreetMap tile licence. */
 export const TILE_ATTRIBUTION =
   '&copy; <a href="https://www.esri.com/">Esri</a>, HERE, Garmin, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, and the GIS user community';
-
-/** Colour stops for the heat overlay, ascending from cold (0) to hot (1). */
-export const RAMP: Array<{ at: number; rgba: [number, number, number, number] }> = [
-  { at: 0, rgba: [252, 76, 2, 0] },
-  { at: 0.1, rgba: [120, 40, 10, 120] },
-  { at: 0.3, rgba: [200, 60, 10, 200] },
-  { at: 0.55, rgba: [252, 76, 2, 235] },
-  { at: 0.75, rgba: [255, 140, 40, 250] },
-  { at: 0.9, rgba: [255, 205, 90, 255] },
-  { at: 1, rgba: [255, 246, 200, 255] },
-];
 
 /** Overlap count treated as the hottest line; higher counts clamp. */
 export const HEAT_MAX_COUNT = 64;
@@ -109,8 +95,6 @@ export interface HeatmapPrefs {
   opacity: number;
   basemap: boolean;
   sports: string[];
-  /** Draw the individual route outlines above the heat glow. */
-  lines: boolean;
 }
 
 /** Default heatmap preferences; also the fallback for missing or malformed storage. */
@@ -118,7 +102,6 @@ export const DEFAULT_HEATMAP_PREFS: HeatmapPrefs = {
   opacity: 0.85,
   basemap: true,
   sports: [],
-  lines: true,
 };
 
 /** Lowest and highest overlay opacity the slider/prefs allow. */
@@ -148,8 +131,6 @@ export function normalisePrefs(value: unknown): HeatmapPrefs {
     sports: Array.isArray(source.sports)
       ? source.sports.filter((sport): sport is string => typeof sport === 'string')
       : [],
-    lines:
-      typeof source.lines === 'boolean' ? source.lines : DEFAULT_HEATMAP_PREFS.lines,
   };
 }
 
@@ -337,63 +318,4 @@ export function sportTypes(acts: Activity[]): SportTypeCount[] {
   return [...counts.entries()]
     .map(([type, count]) => ({ type, count }))
     .sort((a, b) => b.count - a.count || a.type.localeCompare(b.type));
-}
-
-/**
- * Alpha level at `q` over the non-transparent pixels, used to normalise the heat
- * overlay. Transparent pixels are ignored so sparse margins do not drag the scale down.
- */
-export function heatQuantile(alpha: Uint8Array, q = HOT_QUANTILE): number {
-  // Alpha is a byte, so an exact counting histogram gives the same order statistic
-  // as sorting every value but in O(n + 256) instead of O(n log n) — important when
-  // a dense raster holds up to 2048² non-transparent pixels.
-  const histogram = new Uint32Array(256);
-  let count = 0;
-  for (let i = 0; i < alpha.length; i++) {
-    const value = alpha[i];
-    if (value > 0) {
-      histogram[value] += 1;
-      count += 1;
-    }
-  }
-  if (count === 0) return 0;
-
-  // Walk the histogram to the same 0-based index `sorted[floor(q * (n - 1))]`.
-  let index = Math.min(count - 1, Math.max(0, Math.floor(q * (count - 1))));
-  for (let value = 1; value < 256; value++) {
-    if (index < histogram[value]) return value;
-    index -= histogram[value];
-  }
-  return 255;
-}
-
-/**
- * Recolours an RGBA raster in place, mapping its alpha channel through {@link RAMP}.
- * `hot` is the alpha value that should reach the hottest stop; everything above it clamps.
- * The input RGB is treated as white, so all colour comes from the ramp.
- */
-export function applyHeatRamp(rgba: Uint8ClampedArray, hot: number): void {
-  const scale = 255 / Math.max(hot, 8);
-
-  for (let i = 0; i < rgba.length; i += 4) {
-    const alpha = rgba[i + 3];
-    if (alpha < 3) {
-      rgba[i + 3] = 0;
-      continue;
-    }
-
-    const v = Math.min(1, (alpha * scale) / 255) ** GAMMA;
-
-    let upper = 1;
-    while (upper < RAMP.length - 1 && RAMP[upper].at < v) upper++;
-
-    const hi = RAMP[upper];
-    const lo = RAMP[upper - 1];
-    const span = hi.at - lo.at;
-    const t = span === 0 ? 0 : (v - lo.at) / span;
-
-    for (let channel = 0; channel < 4; channel++) {
-      rgba[i + channel] = lo.rgba[channel] + (hi.rgba[channel] - lo.rgba[channel]) * t;
-    }
-  }
 }

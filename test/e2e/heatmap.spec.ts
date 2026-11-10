@@ -24,6 +24,33 @@ async function importZip(page: Page, files: Record<string, string>): Promise<voi
   await expect(page.locator('#dashboard')).not.toBeEmpty();
 }
 
+interface OverlayStats {
+  opaque: number;
+  hot: number;
+}
+
+/** Reads the rendered heat blob and counts opaque and near-white pixels. */
+async function overlayStats(page: Page): Promise<OverlayStats> {
+  return page.locator('.heatmap-overlay').evaluate((node) => {
+    const img = node as HTMLImageElement;
+    const canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth;
+    canvas.height = img.naturalHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return { opaque: 0, hot: 0 };
+    ctx.drawImage(img, 0, 0);
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    let opaque = 0;
+    let hot = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      if (data[i + 3] < 180) continue;
+      opaque++;
+      if (data[i] > 220 && data[i + 1] > 180 && data[i + 2] > 100) hot++;
+    }
+    return { opaque, hot };
+  });
+}
+
 const CSV_HEADER =
   'Activity ID,Activity Date,Activity Name,Activity Type,Distance,Elapsed Time,Moving Time,Average Heart Rate,Max Heart Rate,Average Speed,Elevation Gain,Average Run Cadence';
 
@@ -73,6 +100,7 @@ test('renders heat over the dark map and survives blocked tiles', async ({ page 
 
   await expect(page.locator('.leaflet-container')).toBeVisible();
   await expect(page.locator('.heatmap-overlay')).toHaveCount(1);
+  await expect(page.locator('.leaflet-route-lines-pane')).toHaveCount(0);
   await expect
     .poll(() =>
       page
@@ -183,43 +211,54 @@ test('Fit routes refits to the filtered sport after a chip change', async ({ pag
   await expect.poll(viewFingerprint).not.toBe(before);
 });
 
-test('route lines are drawn above the heat and can be hidden', async ({ page }) => {
+test('a single route renders at the cold end of the heat scale', async ({ page }) => {
   await importZip(page, {
-    'activities.csv':
-      `${CSV_HEADER}\n` +
-      `9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88\n` +
-      `8888,2024-06-02 7:00:00 AM,Test Ride,Ride,20.0,3600,3500,140,170,5.5,120,80`,
+    'activities.csv': `${CSV_HEADER}\n9999,2024-06-01 7:00:00 AM,Test Run,Run,5.0,1800,1700,150,175,2.0,50,88`,
     'activities/2024-06-01_Test_Run_9999.gpx': gpx(
       [[51.5, -0.1], [51.505, -0.095], [51.51, -0.09]],
       'Run',
     ),
-    'activities/2024-06-02_Test_Ride_8888.gpx': gpx(
-      [[51.49, -0.11], [51.5, -0.1], [51.51, -0.09]],
-      'Ride',
-    ),
   });
   await page.locator('[data-testid="nav-tab-heatmap"]').click();
-  await expect(page.locator('.heatmap-overlay')).toHaveAttribute('src', /.+/);
-
-  const toggle = page.locator('[data-testid="heatmap-lines"]');
-  await expect(toggle).toBeChecked();
-
-  const pane = page.locator('.leaflet-route-lines-pane');
-  await expect.poll(() => pane.count()).toBe(1);
-  await expect.poll(() => pane.locator('canvas').count()).toBe(1);
   await expect
-    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
-    .not.toBe('none');
+    .poll(() =>
+      page
+        .locator('.heatmap-overlay')
+        .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect.poll(async () => (await overlayStats(page)).opaque).toBeGreaterThan(0);
 
-  await toggle.uncheck();
-  await expect
-    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
-    .toBe('none');
+  expect((await overlayStats(page)).hot).toBe(0);
+  await expect(page.locator('[data-testid="heatmap-lines"]')).toHaveCount(0);
+});
 
-  await toggle.check();
+test('overlapping routes climb to the hot end of the heat scale', async ({ page }) => {
+  const points: Array<[number, number]> = [
+    [51.5, -0.1],
+    [51.505, -0.095],
+    [51.51, -0.09],
+  ];
+  const files: Record<string, string> = {};
+  const rows: string[] = [];
+  for (let i = 0; i < 64; i++) {
+    files[`activities/2024-06-01_Test_Run_${5000 + i}.gpx`] = gpx(points, `Run ${i}`);
+    rows.push(
+      `${5000 + i},2024-06-01 7:00:00 AM,Test Run ${i},Run,5.0,1800,1700,150,175,2.0,50,88`,
+    );
+  }
+  files['activities.csv'] = `${CSV_HEADER}\n${rows.join('\n')}`;
+
+  await importZip(page, files);
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
   await expect
-    .poll(() => pane.evaluate((el) => getComputedStyle(el).display))
-    .not.toBe('none');
+    .poll(() =>
+      page
+        .locator('.heatmap-overlay')
+        .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+    )
+    .toBeGreaterThan(0);
+  await expect.poll(async () => (await overlayStats(page)).hot).toBeGreaterThan(0);
 });
 
 test('tab switches do not leak Leaflet maps', async ({ page }) => {

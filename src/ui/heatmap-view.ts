@@ -2,12 +2,11 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { Activity } from '../data/types.ts';
 import {
-  applyHeatRamp,
   computeHeatBounds,
   DEFAULT_HEATMAP_PREFS,
+  densityValue,
   HEATMAP_PREFS_KEY,
-  heatQuantile,
-  HOT_QUANTILE,
+  heatColor,
   lonLatToWorld,
   MAX_HEAT_OPACITY,
   MAX_RASTER,
@@ -34,16 +33,16 @@ const MIN_SPAN = 1e-9;
 /** Tile errors before the "basemap unavailable" note is shown (single failed tiles are noise). */
 const TILE_ERROR_THRESHOLD = 4;
 
-/** Route-outline style: thin warm white, faint enough that the heat glow still leads. */
-const ROUTE_LINE_COLOR = '#ffe4c4';
-const ROUTE_LINE_WEIGHT = 1.1;
-const ROUTE_LINE_OPACITY = 0.4;
-/** Dark casing beneath each outline so paths stay visible across saturated white heat. */
-const ROUTE_CASING_COLOR = '#1a1008';
-const ROUTE_CASING_OPACITY = 0.45;
-const ROUTE_CASING_EXTRA = 1.3;
-/** Pane name; Leaflet derives the `.leaflet-route-lines-pane` class from it. */
-const ROUTE_LINES_PANE = 'route-lines';
+/** Overlap grid resolution: longest side in cells, and corridor radius in cells. */
+const GRID_SIZE = 1024;
+const GRID_RADIUS = 1;
+/** Longest segment piece drawn with one sampled colour, in raster pixels. */
+const CHUNK_PX = 8;
+/** Number of colour buckets used to keep drawing to a few dozen strokes. */
+const HEAT_LEVELS = 32;
+/** Glow drawn under each line: width multiplier and alpha. */
+const GLOW_WIDTH_MULT = 3;
+const GLOW_ALPHA = 0.16;
 
 /** Live map field; Leaflet attaches to this element once it has been laid out. */
 let mapEl: HTMLElement | null = null;
@@ -51,8 +50,6 @@ let prefs: HeatmapPrefs = { ...DEFAULT_HEATMAP_PREFS };
 let map: L.Map | null = null;
 let tileLayer: L.TileLayer | null = null;
 let overlay: L.ImageOverlay | null = null;
-let routeLayers: L.Polyline[] = [];
-let linesPane: HTMLElement | null = null;
 let blobUrl: string | null = null;
 let noteEl: HTMLElement | null = null;
 let renderingEl: HTMLElement | null = null;
@@ -139,8 +136,8 @@ function projectToCanvas(
 }
 
 /**
- * Renders the heat raster for the given routes: white strokes, blurred, then recoloured
- * through the heat ramp. Returns the finished canvas so the caller can turn it into a blob.
+ * Renders the line heat: count how many distinct routes touch each corridor, then draw
+ * every segment in the ramp colour sampled from that count, with a soft glow underneath.
  */
 function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasElement {
   const nw = lonLatToWorld(bounds.north, bounds.west);
@@ -156,72 +153,118 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
   const width = Math.max(1, Math.round((longSide * spanX) / longestSpan));
   const height = Math.max(1, Math.round((longSide * spanY) / longestSpan));
 
-  const source = document.createElement('canvas');
-  source.width = width;
-  source.height = height;
   const out = document.createElement('canvas');
   out.width = width;
   out.height = height;
+  const ctx = out.getContext('2d');
+  if (!ctx) return out;
 
-  const sctx = source.getContext('2d');
-  const octx = out.getContext('2d');
-  if (!sctx || !octx) return out;
-
-  const lineWidth = Math.min(9, Math.max(2.5, Math.min(width, height) / 260));
-  // Low per-route alpha keeps hundreds of overlapping routes from saturating to white;
-  // the dedicated route-line layer above the heat is what makes paths traceable.
-  sctx.globalAlpha = 0.035;
-  sctx.strokeStyle = '#fff';
-  sctx.lineWidth = lineWidth;
-  sctx.lineCap = 'round';
-  sctx.lineJoin = 'round';
-
-  for (const route of routes) {
-    if (route.points.length < 2) continue;
-    sctx.beginPath();
-    const [startX, startY] = projectToCanvas(
-      route.points[0][0],
-      route.points[0][1],
-      nw,
-      spanX,
-      spanY,
-      width,
-      height,
+  const projected = routes
+    .filter((route) => route.points.length >= 2)
+    .map((route) =>
+      route.points.map(([lat, lon]) =>
+        projectToCanvas(lat, lon, nw, spanX, spanY, width, height),
+      ),
     );
-    sctx.moveTo(startX, startY);
-    for (let i = 1; i < route.points.length; i++) {
-      const [x, y] = projectToCanvas(
-        route.points[i][0],
-        route.points[i][1],
-        nw,
-        spanX,
-        spanY,
-        width,
-        height,
-      );
-      sctx.lineTo(x, y);
+  if (projected.length === 0) return out;
+
+  const gridW = Math.max(1, Math.round((GRID_SIZE * spanX) / longestSpan));
+  const gridH = Math.max(1, Math.round((GRID_SIZE * spanY) / longestSpan));
+  const counts = new Uint16Array(gridW * gridH);
+  const stamps = new Uint16Array(gridW * gridH);
+  const touched: number[] = [];
+
+  const cellIndex = (gx: number, gy: number): number => {
+    const x = gx < 0 ? 0 : gx >= gridW ? gridW - 1 : gx;
+    const y = gy < 0 ? 0 : gy >= gridH ? gridH - 1 : gy;
+    return y * gridW + x;
+  };
+  const mark = (gx: number, gy: number, stamp: number): void => {
+    for (let oy = -GRID_RADIUS; oy <= GRID_RADIUS; oy++) {
+      for (let ox = -GRID_RADIUS; ox <= GRID_RADIUS; ox++) {
+        const index = cellIndex(gx + ox, gy + oy);
+        if (stamps[index] !== stamp) {
+          stamps[index] = stamp;
+          touched.push(index);
+        }
+      }
     }
-    sctx.stroke();
+  };
+
+  // Pass 1: count each route at most once per corridor cell.
+  for (let r = 0; r < projected.length; r++) {
+    const stamp = r + 1;
+    const points = projected[r];
+    for (let i = 1; i < points.length; i++) {
+      const [x0, y0] = points[i - 1];
+      const [x1, y1] = points[i];
+      const gx0 = (x0 / width) * (gridW - 1);
+      const gy0 = (y0 / height) * (gridH - 1);
+      const dx = (x1 / width) * (gridW - 1) - gx0;
+      const dy = (y1 / height) * (gridH - 1) - gy0;
+      const steps = Math.max(1, Math.ceil(Math.max(Math.abs(dx), Math.abs(dy))));
+      for (let s = 0; s <= steps; s++) {
+        const t = s / steps;
+        mark(Math.round(gx0 + dx * t), Math.round(gy0 + dy * t), stamp);
+      }
+    }
+    for (const index of touched) counts[index] += 1;
+    touched.length = 0;
   }
 
-  if (typeof octx.filter === 'undefined') {
-    octx.globalAlpha = 0.5;
-    octx.drawImage(source, 0, 0);
-    octx.drawImage(source, -1, 0);
-    octx.drawImage(source, 1, 0);
-  } else {
-    octx.filter = `blur(${Math.max(1, Math.round(lineWidth * 0.7))}px)`;
-    octx.drawImage(source, 0, 0);
-    octx.filter = 'none';
+  // Pass 2: bucket each segment piece by the overlap count at its midpoint.
+  const paths = Array.from({ length: HEAT_LEVELS }, () => new Path2D());
+  const sample = (x: number, y: number): number => {
+    const gx = Math.round((x / width) * (gridW - 1));
+    const gy = Math.round((y / height) * (gridH - 1));
+    return counts[cellIndex(gx, gy)];
+  };
+
+  for (const points of projected) {
+    for (let i = 1; i < points.length; i++) {
+      const [x0, y0] = points[i - 1];
+      const [x1, y1] = points[i];
+      const pieces = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / CHUNK_PX));
+      for (let p = 0; p < pieces; p++) {
+        const t0 = p / pieces;
+        const t1 = (p + 1) / pieces;
+        const ax = x0 + (x1 - x0) * t0;
+        const ay = y0 + (y1 - y0) * t0;
+        const bx = x0 + (x1 - x0) * t1;
+        const by = y0 + (y1 - y0) * t1;
+        const count = sample((ax + bx) / 2, (ay + by) / 2);
+        const level = Math.min(
+          HEAT_LEVELS - 1,
+          Math.floor(densityValue(count) * HEAT_LEVELS),
+        );
+        paths[level].moveTo(ax, ay);
+        paths[level].lineTo(bx, by);
+      }
+    }
   }
 
-  // `ImageData.data` is a `Uint8ClampedArray`; copy the alpha channel into a plain
-  // `Uint8Array` because `heatQuantile` is typed against the latter.
-  const data = octx.getImageData(0, 0, width, height);
-  const alpha = new Uint8Array(width * height);
-  for (let i = 3, j = 0; i < data.data.length; i += 4, j++) alpha[j] = data.data[i];
-  applyHeatRamp(data.data, heatQuantile(alpha, HOT_QUANTILE));
-  octx.putImageData(data, 0, 0);
+  const colour = (level: number): string => {
+    const [r, g, b] = heatColor((level + 0.5) / HEAT_LEVELS);
+    return `rgb(${r}, ${g}, ${b})`;
+  };
+  const coreWidth = Math.min(3, Math.max(1.2, Math.min(width, height) / 700));
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  // Glow first so every core stays crisp on top.
+  ctx.globalAlpha = GLOW_ALPHA;
+  ctx.lineWidth = coreWidth * GLOW_WIDTH_MULT;
+  for (let level = 0; level < HEAT_LEVELS; level++) {
+    ctx.strokeStyle = colour(level);
+    ctx.stroke(paths[level]);
+  }
+
+  ctx.globalAlpha = 1;
+  ctx.lineWidth = coreWidth;
+  for (let level = 0; level < HEAT_LEVELS; level++) {
+    ctx.strokeStyle = colour(level);
+    ctx.stroke(paths[level]);
+  }
 
   return out;
 }
@@ -275,46 +318,6 @@ function updateHeat(routes: SanitizedRoute[], bounds: HeatBounds): void {
       );
     }),
   );
-}
-
-/**
- * Rebuilds the non-interactive multi-polyline that traces every visible route. It lives
- * in a pane above the heat overlay so individual paths stay crisp through pan/zoom.
- */
-function updateRouteLines(routes: SanitizedRoute[]): void {
-  if (!map) return;
-  for (const layer of routeLayers) map.removeLayer(layer);
-  routeLayers = [];
-  if (!prefs.lines) return;
-
-  const latlngs = routes
-    .filter((route) => route.points.length >= 2)
-    .map((route) => route.points.map(([lat, lon]) => [lat, lon] as [number, number]));
-  if (latlngs.length === 0) return;
-
-  // Casing first, then the warm line, so both render into the same pane canvas in order.
-  const casing = L.polyline(latlngs, {
-    pane: ROUTE_LINES_PANE,
-    color: ROUTE_CASING_COLOR,
-    weight: ROUTE_LINE_WEIGHT + ROUTE_CASING_EXTRA,
-    opacity: ROUTE_CASING_OPACITY,
-    interactive: false,
-  });
-  const line = L.polyline(latlngs, {
-    pane: ROUTE_LINES_PANE,
-    color: ROUTE_LINE_COLOR,
-    weight: ROUTE_LINE_WEIGHT,
-    opacity: ROUTE_LINE_OPACITY,
-    interactive: false,
-  });
-  casing.addTo(map);
-  line.addTo(map);
-  routeLayers = [casing, line];
-}
-
-/** Shows or hides the route-outline pane without rebuilding the polyline. */
-function applyLinesVisibility(): void {
-  if (linesPane) linesPane.style.display = prefs.lines ? '' : 'none';
 }
 
 /** Builds the Esri dark tile layer and reveals the offline note after repeated tile errors. */
@@ -391,13 +394,6 @@ function initMap(host: HTMLElement, routes: SanitizedRoute[], bounds: HeatBounds
 
   const tiles = buildTiles();
   if (prefs.basemap) tiles.addTo(map);
-
-  // Dedicated pane above the image overlay (z 400) keeps outlines on top of the glow.
-  linesPane = map.createPane(ROUTE_LINES_PANE);
-  linesPane.style.zIndex = '450';
-  linesPane.style.pointerEvents = 'none';
-  applyLinesVisibility();
-  updateRouteLines(routes);
 
   updateHeat(routes, bounds);
 }
@@ -484,17 +480,12 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
   basemapLabel.textContent = t('heatmap_basemap');
   basemapField.append(basemap, basemapLabel);
 
-  const linesField = el('label', 'heatmap-toggle');
-  const lines = el('input', 'heatmap-lines', 'heatmap-lines');
-  lines.type = 'checkbox';
-  lines.checked = prefs.lines;
-  lines.setAttribute('aria-label', t('heatmap_lines'));
-  const linesLabel = el('span', 'heatmap-toggle-label');
-  linesLabel.textContent = t('heatmap_lines');
-  linesField.append(lines, linesLabel);
-
-  controls.append(opacityField, basemapField, linesField);
+  controls.append(opacityField, basemapField);
   panel.appendChild(controls);
+
+  const densityHint = el('p', 'heatmap-hint');
+  densityHint.textContent = t('heatmap_density');
+  panel.appendChild(densityHint);
 
   const hint = el('p', 'heatmap-hint');
   hint.textContent = t('heatmap_local');
@@ -573,12 +564,10 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
         URL.revokeObjectURL(blobUrl);
         blobUrl = null;
       }
-      updateRouteLines([]);
       return;
     }
     hideEmpty();
     if (!map) return;
-    updateRouteLines(list);
     const filteredBounds = computeHeatBounds(list);
     if (filteredBounds) updateHeat(list, filteredBounds);
   }
@@ -613,13 +602,6 @@ export function renderHeatmapTab(acts: Activity[]): HTMLElement {
     if (prefs.basemap) tileLayer.addTo(map);
     else map.removeLayer(tileLayer);
   });
-  lines.addEventListener('change', () => {
-    prefs.lines = lines.checked;
-    savePrefs();
-    updateRouteLines(visibleRoutes());
-    applyLinesVisibility();
-  });
-
   tab.appendChild(field);
   mapEl = field;
   noteEl = note;
@@ -669,8 +651,6 @@ export function destroyHeatmap(): void {
     map = null;
   }
   overlay = null;
-  routeLayers = [];
-  linesPane = null;
   tileLayer = null;
   tileErrors = 0;
   noteEl = null;

@@ -5,12 +5,10 @@ import {
   MIN_SPAN_DEG,
   TILE_ATTRIBUTION,
   TILE_URL,
-  applyHeatRamp,
   computeHeatBounds,
   densityValue,
   haversineKm,
   heatColor,
-  heatQuantile,
   lonLatToWorld,
   normalisePrefs,
   sanitizeRoutes,
@@ -184,89 +182,6 @@ describe('sportTypes', () => {
 });
 
 /** Deterministic PRNG so the property below is reproducible. */
-function mulberry32(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (state + 0x6d2b79f5) >>> 0;
-    let t = state;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-/** Straightforward sort-based reference the counting histogram must match exactly. */
-function referenceQuantile(alpha: Uint8Array, q: number): number {
-  const values = [...alpha].filter((a) => a > 0).sort((a, b) => a - b);
-  if (values.length === 0) return 0;
-  const index = Math.min(values.length - 1, Math.max(0, Math.floor(q * (values.length - 1))));
-  return values[index];
-}
-
-describe('heatQuantile', () => {
-  it('ignores zero alpha and returns the requested quantile', () => {
-    const alpha = new Uint8Array([0, 0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]);
-    expect(heatQuantile(alpha, 0.5)).toBe(50);
-    expect(heatQuantile(alpha, 1)).toBe(100);
-  });
-
-  it('returns 0 when every pixel is transparent', () => {
-    expect(heatQuantile(new Uint8Array([0, 0, 0]), 0.98)).toBe(0);
-  });
-
-  it('is exact against the sorted-value reference', () => {
-    const alpha = new Uint8Array(256);
-    for (let i = 0; i < 256; i++) alpha[i] = i; // one of every byte value
-    for (const q of [0, 0.25, 0.5, 0.9, 0.98, 1]) {
-      expect(heatQuantile(alpha, q)).toBe(referenceQuantile(alpha, q));
-    }
-  });
-
-  it('matches the reference across random alpha fields', () => {
-    const random = mulberry32(0x1234abcd);
-    const cases: Array<{ alpha: Uint8Array; q: number }> = [
-      { alpha: new Uint8Array(0), q: 0.98 },
-      { alpha: new Uint8Array([255]), q: 0.5 },
-      { alpha: new Uint8Array([1, 2, 3, 4, 5]), q: 0.98 },
-      { alpha: new Uint8Array([0, 0, 0, 17]), q: 1 },
-    ];
-    for (let i = 0; i < 60; i++) {
-      const len = Math.floor(random() * 500);
-      const field = new Uint8Array(len);
-      for (let j = 0; j < len; j++) field[j] = Math.floor(random() * 256);
-      cases.push({ alpha: field, q: random() });
-    }
-    for (const { alpha: field, q } of cases) {
-      expect(heatQuantile(field, q)).toBe(referenceQuantile(field, q));
-    }
-  });
-});
-
-describe('applyHeatRamp', () => {
-  it('leaves transparent pixels transparent', () => {
-    const px = new Uint8ClampedArray([255, 255, 255, 0]);
-    applyHeatRamp(px, 255);
-    expect(px[3]).toBe(0);
-  });
-
-  it('maps full heat to the hot end of the ramp', () => {
-    const px = new Uint8ClampedArray([255, 255, 255, 255]);
-    applyHeatRamp(px, 255);
-    expect([px[0], px[1], px[2], px[3]]).toEqual([255, 246, 200, 255]);
-  });
-
-  it('clamps values above the hot level and brightens monotonically', () => {
-    const low = new Uint8ClampedArray([255, 255, 255, 20]);
-    const high = new Uint8ClampedArray([255, 255, 255, 120]);
-    const over = new Uint8ClampedArray([255, 255, 255, 255]);
-    applyHeatRamp(low, 200);
-    applyHeatRamp(high, 200);
-    applyHeatRamp(over, 100);
-    const brightness = (v: Uint8ClampedArray) => v[0] + v[1] + v[2] + v[3];
-    expect(brightness(high)).toBeGreaterThan(brightness(low));
-    expect([over[0], over[1], over[2], over[3]]).toEqual([255, 246, 200, 255]);
-  });
-});
 
 describe('shouldRefit', () => {
   const bounds = { west: -0.15, south: 51.48, east: -0.08, north: 51.55 };
@@ -307,13 +222,11 @@ describe('normalisePrefs', () => {
       opacity: 0.85,
       basemap: true,
       sports: [],
-      lines: true,
     });
     expect(normalisePrefs('nope')).toEqual({
       opacity: 0.85,
       basemap: true,
       sports: [],
-      lines: true,
     });
   });
 
@@ -329,14 +242,13 @@ describe('normalisePrefs', () => {
       opacity: 0.25,
       basemap: false,
       sports: ['Run', 'Ride'],
-      lines: false,
     });
   });
 
   it('falls back per field instead of discarding the whole prefs object', () => {
     expect(
       normalisePrefs({ opacity: 'high', basemap: 'yes', sports: 'Run', lines: 'off' }),
-    ).toEqual({ opacity: 0.85, basemap: true, sports: [], lines: true });
+    ).toEqual({ opacity: 0.85, basemap: true, sports: [] });
   });
 });
 
