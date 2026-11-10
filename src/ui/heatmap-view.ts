@@ -135,6 +135,121 @@ function projectToCanvas(
   return [((world.x - nw.x) / spanX) * width, ((world.y - nw.y) / spanY) * height];
 }
 
+/** One axis of a separable box blur over a grid-sized float field. */
+function blurAxis(
+  src: Float32Array,
+  dst: Float32Array,
+  gridW: number,
+  gridH: number,
+  radius: number,
+  horizontal: boolean,
+): void {
+  if (radius <= 0) {
+    dst.set(src);
+    return;
+  }
+  const span = radius * 2 + 1;
+  const limit = horizontal ? gridW : gridH;
+  const lines = horizontal ? gridH : gridW;
+  const step = horizontal ? 1 : gridW;
+  const clampIndex = (value: number): number =>
+    value < 0 ? 0 : value >= limit ? limit - 1 : value;
+  for (let line = 0; line < lines; line++) {
+    const base = horizontal ? line * gridW : line;
+    let sum = 0;
+    for (let i = -radius; i <= radius; i++) sum += src[base + clampIndex(i) * step];
+    for (let i = 0; i < limit; i++) {
+      dst[base + i * step] = sum / span;
+      sum +=
+        src[base + clampIndex(i + radius + 1) * step] -
+        src[base + clampIndex(i - radius) * step];
+    }
+  }
+}
+
+/** Blurs a grid-sized field twice per axis, approximating a Gaussian falloff. */
+function blurField(
+  field: Float32Array,
+  gridW: number,
+  gridH: number,
+  radiusX: number,
+  radiusY: number,
+): void {
+  const scratch = new Float32Array(field.length);
+  for (let pass = 0; pass < 2; pass++) {
+    blurAxis(field, scratch, gridW, gridH, radiusX, true);
+    blurAxis(scratch, field, gridW, gridH, radiusY, false);
+  }
+}
+
+/** 256-entry ramp lookup so building the bloom stays a single pass over the grid. */
+const RAMP_LUT: Uint8Array = (() => {
+  const lut = new Uint8Array(256 * 3);
+  for (let i = 0; i < 256; i++) {
+    const [r, g, b] = heatColor(i / 255);
+    lut[i * 3] = r;
+    lut[i * 3 + 1] = g;
+    lut[i * 3 + 2] = b;
+  }
+  return lut;
+})();
+
+/**
+ * Builds the soft halo from the overlap grid instead of stroking every route.
+ *
+ * A bloom is the one part of the render that wants a blur anyway, and reading it from
+ * the grid makes its cost a fixed few hundred thousand cells no matter how many routes
+ * were exported. Stroking a wide halo per route instead scales with routes × brush area
+ * and is what left large exports unresponsive for half a minute.
+ */
+function buildGlow(
+  counts: Uint16Array,
+  gridW: number,
+  gridH: number,
+  radiusX: number,
+  radiusY: number,
+): HTMLCanvasElement | null {
+  const total = counts.length;
+  const density = new Float32Array(total);
+  const cover = new Float32Array(total);
+  let hot = 0;
+  for (let i = 0; i < total; i++) {
+    const count = counts[i];
+    if (count > 0) {
+      density[i] = count;
+      cover[i] = 1;
+      hot++;
+    }
+  }
+  if (hot === 0) return null;
+
+  blurField(density, gridW, gridH, radiusX, radiusY);
+  blurField(cover, gridW, gridH, radiusX, radiusY);
+
+  const glow = document.createElement('canvas');
+  glow.width = gridW;
+  glow.height = gridH;
+  const ctx = glow.getContext('2d');
+  if (!ctx) return null;
+  const image = ctx.createImageData(gridW, gridH);
+  const { data } = image;
+  for (let i = 0; i < total; i++) {
+    // Normalised convolution: the blurred count over the blurred coverage is the local
+    // average overlap, so one route reads as one route instead of fading with the blur.
+    const weight = cover[i];
+    if (weight < 0.004) continue;
+    const value = densityValue(density[i] / weight);
+    const entry = Math.min(255, Math.round(value * 255)) * 3;
+    const at = i * 4;
+    data[at] = RAMP_LUT[entry];
+    data[at + 1] = RAMP_LUT[entry + 1];
+    data[at + 2] = RAMP_LUT[entry + 2];
+    data[at + 3] = Math.min(1, weight * 4) * 255;
+  }
+  ctx.putImageData(image, 0, 0);
+  return glow;
+}
+
 /**
  * Renders the line heat: count how many distinct routes touch each corridor, then draw
  * every segment in the ramp colour sampled from that count, with a soft glow underneath.
@@ -221,6 +336,11 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
   };
 
   for (const points of projected) {
+    // Merge consecutive pieces in the same colour bucket into one subpath. Every
+    // subpath pays for two round caps when stroked, and the caps dominate the cost on
+    // large exports: one subpath per 8 px piece means hundreds of thousands of them.
+    let run: Path2D | null = null;
+    let runLevel = -1;
     for (let i = 1; i < points.length; i++) {
       const [x0, y0] = points[i - 1];
       const [x1, y1] = points[i];
@@ -237,8 +357,12 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
           HEAT_LEVELS - 1,
           Math.floor(densityValue(count) * HEAT_LEVELS),
         );
-        paths[level].moveTo(ax, ay);
-        paths[level].lineTo(bx, by);
+        if (level !== runLevel) {
+          run = paths[level];
+          runLevel = level;
+          run.moveTo(ax, ay);
+        }
+        if (run) run.lineTo(bx, by);
       }
     }
   }
@@ -251,28 +375,23 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
   // at up to 2048 px and Leaflet then fits it to the viewport, downscaling by 2–4×.
   const coreWidth = Math.min(8, Math.max(2, longSide / 280));
 
-  // Glow is built on its own layer and composited once. Stroking it straight onto the
-  // output would re-accumulate alpha for every overlapping route, turning busy roads
-  // into opaque slabs; a single pass keeps the halo flat while the core carries density.
-  const glow = document.createElement('canvas');
-  glow.width = width;
-  glow.height = height;
-  const gctx = glow.getContext('2d');
-  if (gctx) {
-    gctx.lineCap = 'round';
-    gctx.lineJoin = 'round';
-    gctx.lineWidth = coreWidth * GLOW_WIDTH_MULT;
-    for (let level = 0; level < HEAT_LEVELS; level++) {
-      gctx.strokeStyle = colour(level);
-      gctx.stroke(paths[level]);
-    }
-
+  // Glow is derived from the overlap grid and composited once. Stroking a wide halo
+  // per route costs time proportional to routes × brush area, while the grid is a
+  // fixed-size blur no matter how many routes there are.
+  const glow = buildGlow(
+    counts,
+    gridW,
+    gridH,
+    Math.max(1, Math.round((coreWidth * GLOW_WIDTH_MULT) / 2 / (width / gridW))),
+    Math.max(1, Math.round((coreWidth * GLOW_WIDTH_MULT) / 2 / (height / gridH))),
+  );
+  if (glow) {
     ctx.save();
-    if (typeof ctx.filter === 'string') {
-      ctx.filter = `blur(${Math.max(1, Math.round(coreWidth * 1.2))}px)`;
-    }
+    // Composited once at low alpha so overlapping routes cannot accumulate the halo into
+    // an opaque slab; the core underneath still carries density through its colour.
     ctx.globalAlpha = GLOW_ALPHA;
-    ctx.drawImage(glow, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.drawImage(glow, 0, 0, width, height);
     ctx.restore();
   }
 

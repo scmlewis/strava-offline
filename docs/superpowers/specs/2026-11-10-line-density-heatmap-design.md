@@ -97,18 +97,27 @@ routes gives `v = 1`. Bucket `v` into ~32 levels.
 
 Draw twice into a transparent output canvas, low level to high:
 
-1. **Glow:** all bucket paths stroked at ~4× core width onto a separate transparent
-   layer, blurred by ~core width, then composited once at alpha `0.28`.
+1. **Glow:** a soft bloom built from the overlap grid itself, not from the route paths.
+   The grid's counts and a 0/1 coverage mask are each box-blurred twice per axis (which
+   approximates a Gaussian). Every cell then takes `count / coverage` — the local
+   average overlap — through the same ramp, with alpha fading out as coverage falls.
+   The whole bloom is put into a grid-sized canvas and upscaled once onto the output at
+   alpha `0.28`.
 2. **Core:** the same paths with a full-opacity stroke whose width scales with the
    raster (`clamp(longSide/280, 2, 8)` px) so on-screen weight stays constant after
-   Leaflet downscales the overlay.
+   Leaflet downscales the overlay. Consecutive pieces in the same bucket are merged into
+   one subpath, so a route costs a few strokes instead of one per 8 px piece.
 
 Compositing the glow once matters: stroking it straight onto the output would accumulate
 alpha for every overlapping route and turn busy roads into opaque slabs. The core still
 carries density through its colour. Drawing all glow before all cores keeps every core
-crisp. Bucketing keeps this to ~64 stroke calls instead of tens of thousands of
-per-segment strokes. The finished canvas is turned into a blob and swapped into the
-existing `L.imageOverlay`.
+crisp.
+
+Deriving the bloom from the grid is what keeps large exports responsive: a per-route
+wide stroke costs `routes × brush area`, and 2000 routes took ~35 s to rasterise that
+way (the tab simply stopped responding). The blurred grid is a fixed ~650k-cell job, so
+a 2000-route export now renders in well under a second. The finished canvas is turned
+into a blob and swapped into the existing `L.imageOverlay`.
 
 ### 4. Ramp
 

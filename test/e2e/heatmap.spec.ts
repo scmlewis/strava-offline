@@ -11,7 +11,11 @@ function gpx(points: Array<[number, number]>, name: string): string {
   return `<?xml version="1.0"?><gpx version="1.1" xmlns="http://www.topografix.com/GPX/1/1"><trk><name>${name}</name><trkseg>${pts}</trkseg></trk></gpx>`;
 }
 
-async function importZip(page: Page, files: Record<string, string>): Promise<void> {
+async function importZip(
+  page: Page,
+  files: Record<string, string>,
+  importTimeout = 5_000,
+): Promise<void> {
   const zip = new JSZip();
   for (const [path, text] of Object.entries(files)) zip.file(path, text);
   const buffer = await zip.generateAsync({ type: 'nodebuffer' });
@@ -21,7 +25,7 @@ async function importZip(page: Page, files: Record<string, string>): Promise<voi
     page.locator('#pick-btn').click(),
   ]);
   await chooser.setFiles({ name: 'export.zip', mimeType: 'application/zip', buffer });
-  await expect(page.locator('#dashboard')).not.toBeEmpty();
+  await expect(page.locator('#dashboard')).not.toBeEmpty({ timeout: importTimeout });
 }
 
 interface OverlayStats {
@@ -259,6 +263,47 @@ test('overlapping routes climb to the hot end of the heat scale', async ({ page 
     )
     .toBeGreaterThan(0);
   await expect.poll(async () => (await overlayStats(page)).hot).toBeGreaterThan(0);
+});
+
+test('a large export renders the heat without hanging', async ({ page }) => {
+  // Regression guard: the halo used to be stroked once per route piece, so a large
+  // export spent ~35 s rasterising wide round caps and the tab stopped responding.
+  test.setTimeout(180_000);
+  const routes = 2000;
+  const points = 120;
+  const files: Record<string, string> = {};
+  const rows: string[] = [];
+  for (let i = 0; i < routes; i++) {
+    const angle = (i / routes) * Math.PI * 2;
+    const length = 0.3 + (i % 7) * 0.15;
+    const track: Array<[number, number]> = [];
+    for (let p = 0; p <= points; p++) {
+      const t = p / points;
+      track.push([
+        51.5074 + Math.sin(angle) * length * t + Math.sin(t * 9) * 0.004,
+        -0.1278 + Math.cos(angle) * length * t + Math.cos(t * 9) * 0.004,
+      ]);
+    }
+    files[`activities/2024-06-01_Test_Run_${9000 + i}.gpx`] = gpx(track, `Run ${i}`);
+    rows.push(
+      `${9000 + i},2024-06-01 7:00:00 AM,Test Run ${i},Run,5.0,1800,1700,150,175,2.0,50,88`,
+    );
+  }
+  files['activities.csv'] = `${CSV_HEADER}\n${rows.join('\n')}`;
+
+  await importZip(page, files, 120_000);
+  await page.locator('[data-testid="nav-tab-heatmap"]').click();
+  await expect(page.locator('[data-testid="heatmap-count"]')).toHaveText(`${routes} routes`);
+  await expect
+    .poll(
+      () =>
+        page
+          .locator('.heatmap-overlay')
+          .evaluate((img) => (img as HTMLImageElement).naturalWidth),
+      { timeout: 15_000 },
+    )
+    .toBeGreaterThan(0);
+  expect((await overlayStats(page)).opaque).toBeGreaterThan(0);
 });
 
 test('tab switches do not leak Leaflet maps', async ({ page }) => {
