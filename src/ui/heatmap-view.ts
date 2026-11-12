@@ -39,9 +39,13 @@ const GRID_RADIUS = 1;
 /** Longest segment piece drawn with one sampled colour, in raster pixels. */
 const CHUNK_PX = 8;
 /** Number of colour buckets used to keep drawing to a few dozen strokes. */
-const HEAT_LEVELS = 32;
-/** Glow drawn under each line: width multiplier and alpha. */
-const GLOW_WIDTH_MULT = 4;
+const HEAT_LEVELS = 128;
+/**
+ * Glow is a soft rim hugging the line: it spreads this fraction of a core width past
+ * the stroke edge and no further, so a dense cluster stays a bundle of lit lines
+ * instead of blooming into a radial wash.
+ */
+const GLOW_SPREAD = 0.5;
 const GLOW_ALPHA = 0.28;
 
 /** Live map field; Leaflet attaches to this element once it has been laid out. */
@@ -377,13 +381,15 @@ function drawHeat(routes: SanitizedRoute[], bounds: HeatBounds): HTMLCanvasEleme
 
   // Glow is derived from the overlap grid and composited once. Stroking a wide halo
   // per route costs time proportional to routes × brush area, while the grid is a
-  // fixed-size blur no matter how many routes there are.
+  // fixed-size blur no matter how many routes there are. The blur radius is kept small
+  // so the light stays on the lines rather than spreading into a radial bloom.
+  const spreadPx = Math.max(2, coreWidth * GLOW_SPREAD);
   const glow = buildGlow(
     counts,
     gridW,
     gridH,
-    Math.max(1, Math.round((coreWidth * GLOW_WIDTH_MULT) / 2 / (width / gridW))),
-    Math.max(1, Math.round((coreWidth * GLOW_WIDTH_MULT) / 2 / (height / gridH))),
+    Math.max(1, Math.round(spreadPx / (width / gridW))),
+    Math.max(1, Math.round(spreadPx / (height / gridH))),
   );
   if (glow) {
     ctx.save();

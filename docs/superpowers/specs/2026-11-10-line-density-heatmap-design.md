@@ -93,16 +93,18 @@ v = min(1, log1p(count) / log1p(HEAT_MAX_COUNT)) ** GAMMA
 ```
 
 with `HEAT_MAX_COUNT = 64` and `GAMMA` around `0.85`. One route gives `v ≈ 0.17`; 64+
-routes gives `v = 1`. Bucket `v` into ~32 levels.
+routes gives `v = 1`. Bucket `v` into 128 levels — fewer levels quantise the smooth
+gradient into visible concentric rings across a dense core.
 
 Draw twice into a transparent output canvas, low level to high:
 
-1. **Glow:** a soft bloom built from the overlap grid itself, not from the route paths.
-   The grid's counts and a 0/1 coverage mask are each box-blurred twice per axis (which
-   approximates a Gaussian). Every cell then takes `count / coverage` — the local
-   average overlap — through the same ramp, with alpha fading out as coverage falls.
-   The whole bloom is put into a grid-sized canvas and upscaled once onto the output at
-   alpha `0.28`.
+1. **Glow:** a tight rim hugging the line, built from the overlap grid itself, not from
+   the route paths. The grid's counts and a 0/1 coverage mask are each box-blurred twice
+   per axis (which approximates a Gaussian). Every cell then takes `count / coverage` —
+   the local average overlap — through the same ramp. The blur radius is only half a core
+   width (`max(2, coreWidth * 0.5)` raster px), so the light extends just past the stroke
+   edge instead of blooming into a radial wash. The bloom is put into a grid-sized canvas
+   and upscaled once onto the output at alpha `0.28`.
 2. **Core:** the same paths with a full-opacity stroke whose width scales with the
    raster (`clamp(longSide/280, 2, 8)` px) so on-screen weight stays constant after
    Leaflet downscales the overlay. Consecutive pieces in the same bucket are merged into
