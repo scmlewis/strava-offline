@@ -1,8 +1,0 @@
-node_modules/
-dist/
-.tsbuildinfo
-*.map
-*.tsbuildinfo
-.superpowers/
-.hooks/
-.opencode/
